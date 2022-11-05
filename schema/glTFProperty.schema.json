@@ -5,10 +5,10 @@
     "type": "object",
     "properties": {
         "extensions": {
-            "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/extension.schema.json"
+            "$ref": "extension.schema.json"
         },
         "extras": {
-            "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/extras.schema.json"
+            "$ref": "extras.schema.json"
         }
     }
 }

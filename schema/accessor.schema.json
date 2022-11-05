@@ -4,10 +4,10 @@
     "title": "Accessor",
     "type": "object",
     "description": "A typed view into a buffer view that contains raw binary data.",
-    "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFChildOfRootProperty.schema.json" } ],
+    "allOf": [ { "$ref": "glTFChildOfRootProperty.schema.json" } ],
     "properties": {
         "bufferView": {
-            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json" } ],
+            "allOf": [ { "$ref": "glTFid.schema.json" } ],
             "description": "The index of the bufferView.",
             "gltf_detailedDescription": "The index of the buffer view. When undefined, the accessor **MUST** be initialized with zeros; `sparse` property or extensions **MAY** override zeros with actual values."
         },
@@ -122,7 +122,7 @@
             "gltf_detailedDescription": "Minimum value of each component in this accessor.  Array elements **MUST** be treated as having the same data type as accessor's `componentType`. Both `min` and `max` arrays have the same length.  The length is determined by the value of the `type` property; it can be 1, 2, 3, 4, 9, or 16.\n\n`normalized` property has no effect on array values: they always correspond to the actual values stored in the buffer. When the accessor is sparse, this property **MUST** contain minimum values of accessor data with sparse substitution applied."
         },
         "sparse": {
-            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/accessor.sparse.schema.json" } ],
+            "allOf": [ { "$ref": "accessor.sparse.schema.json" } ],
             "description": "Sparse storage of elements that deviate from their initialization value."
         },
         "name": { },

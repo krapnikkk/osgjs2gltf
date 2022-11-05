@@ -4,24 +4,24 @@
     "title": "Mesh Primitive",
     "type": "object",
     "description": "Geometry to be rendered with the given material.",
-    "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFProperty.schema.json" } ],
+    "allOf": [ { "$ref": "glTFProperty.schema.json" } ],
     "properties": {
         "attributes": {
             "type": "object",
             "description": "A plain JSON object, where each key corresponds to a mesh attribute semantic and each value is the index of the accessor containing attribute's data.",
             "minProperties": 1,
             "additionalProperties": {
-                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json"
+                "$ref": "glTFid.schema.json"
             }
         },
         "indices": {
-            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json" } ],
+            "allOf": [ { "$ref": "glTFid.schema.json" } ],
             "description": "The index of the accessor that contains the vertex indices.",
             "gltf_detailedDescription": "The index of the accessor that contains the vertex indices.  When this is undefined, the primitive defines non-indexed geometry.  When defined, the accessor **MUST** have `SCALAR` type and an unsigned integer component type.",
             "gltf_webgl": "`drawElements()` when defined and `drawArrays()` otherwise."
         },
         "material": {
-            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json" } ],
+            "allOf": [ { "$ref": "glTFid.schema.json" } ],
             "description": "The index of the material to apply to this primitive when rendering."
         },
         "mode": {
@@ -75,7 +75,7 @@
                 "type": "object",
                 "minProperties": 1,
                 "additionalProperties": {
-                    "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json"
+                    "$ref": "glTFid.schema.json"
                 },
                 "description": "A plain JSON object specifying attributes displacements in a morph target, where each key corresponds to one of the three supported attribute semantic (`POSITION`, `NORMAL`, or `TANGENT`) and each value is the index of the accessor containing the attribute displacements' data."
             },

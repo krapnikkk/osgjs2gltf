@@ -4,7 +4,7 @@
     "title": "Image",
     "type": "object",
     "description": "Image data used to create a texture. Image **MAY** be referenced by an URI (or IRI) or a buffer view index.",
-    "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFChildOfRootProperty.schema.json" } ],
+    "allOf": [ { "$ref": "glTFChildOfRootProperty.schema.json" } ],
     "properties": {
         "uri": {
             "type": "string",
@@ -28,7 +28,7 @@
             "description": "The image's media type. This field **MUST** be defined when `bufferView` is defined."
         },
         "bufferView": {
-            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json" } ],
+            "allOf": [ { "$ref": "glTFid.schema.json" } ],
             "description": "The index of the bufferView that contains the image. This field **MUST NOT** be defined when `uri` is defined."
         },
         "name": { },

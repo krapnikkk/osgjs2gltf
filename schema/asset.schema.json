@@ -4,7 +4,7 @@
     "title": "Asset",
     "type": "object",
     "description": "Metadata about the glTF asset.",
-    "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFProperty.schema.json" } ],
+    "allOf": [ { "$ref": "glTFProperty.schema.json" } ],
     "properties": {
         "copyright": {
             "type": "string",

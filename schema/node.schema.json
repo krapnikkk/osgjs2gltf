@@ -4,23 +4,23 @@
     "title": "Node",
     "type": "object",
     "description": "A node in the node hierarchy.  When the node contains `skin`, all `mesh.primitives` **MUST** contain `JOINTS_0` and `WEIGHTS_0` attributes.  A node **MAY** have either a `matrix` or any combination of `translation`/`rotation`/`scale` (TRS) properties. TRS properties are converted to matrices and postmultiplied in the `T * R * S` order to compose the transformation matrix; first the scale is applied to the vertices, then the rotation, and then the translation. If none are provided, the transform is the identity. When a node is targeted for animation (referenced by an animation.channel.target), `matrix` **MUST NOT** be present.",
-    "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFChildOfRootProperty.schema.json" } ],
+    "allOf": [ { "$ref": "glTFChildOfRootProperty.schema.json" } ],
     "properties": {
         "camera": {
-            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json" } ],
+            "allOf": [ { "$ref": "glTFid.schema.json" } ],
             "description": "The index of the camera referenced by this node."
         },
         "children": {
             "type": "array",
             "description": "The indices of this node's children.",
             "items": {
-                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json"
+                "$ref": "glTFid.schema.json"
             },
             "uniqueItems": true,
             "minItems": 1
         },
         "skin": {
-            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json" } ],
+            "allOf": [ { "$ref": "glTFid.schema.json" } ],
             "description": "The index of the skin referenced by this node.",
             "gltf_detailedDescription": "The index of the skin referenced by this node. When a skin is referenced by a node within a scene, all joints used by the skin **MUST** belong to the same scene. When defined, `mesh` **MUST** also be defined."
         },
@@ -36,7 +36,7 @@
             "gltf_webgl": "`uniformMatrix4fv()` with the transpose parameter equal to false"
         },
         "mesh": {
-            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json" } ],
+            "allOf": [ { "$ref": "glTFid.schema.json" } ],
             "description": "The index of the mesh in this node."
         },
         "rotation": {

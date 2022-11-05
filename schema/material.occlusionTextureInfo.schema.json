@@ -3,7 +3,7 @@
     "$id": "material.occlusionTextureInfo.schema.json",
     "title": "Material Occlusion Texture Info",
     "type": "object",
-    "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/textureInfo.schema.json" } ],
+    "allOf": [ { "$ref": "textureInfo.schema.json" } ],
     "properties": {
         "index": { },
         "texCoord": { },

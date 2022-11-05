@@ -3,7 +3,7 @@
     "$id": "glTFChildOfRootProperty.schema.json",
     "title": "glTF Child of Root Property",
     "type": "object",
-    "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFProperty.schema.json" } ],
+    "allOf": [ { "$ref": "glTFProperty.schema.json" } ],
     "properties": {
         "name": {
             "type": "string",

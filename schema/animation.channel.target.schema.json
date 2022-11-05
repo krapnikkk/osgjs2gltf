@@ -4,10 +4,10 @@
     "title": "Animation Channel Target",
     "type": "object",
     "description": "The descriptor of the animated property.",
-    "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFProperty.schema.json" } ],
+    "allOf": [ { "$ref": "glTFProperty.schema.json" } ],
     "properties": {
         "node": {
-            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json" } ],
+            "allOf": [ { "$ref": "glTFid.schema.json" } ],
             "description": "The index of the node to animate. When undefined, the animated object **MAY** be defined by an extension."
         },
         "path": {
