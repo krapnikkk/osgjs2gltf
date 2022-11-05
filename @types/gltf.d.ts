@@ -1,166 +1,807 @@
 /**
  * The root object for a glTF asset.
  */
- export type GlTF = GlTF1 & GlTF2
- export type GlTF1 = GlTFProperty
- /**
-  * A typed view into a buffer view that contains raw binary data.
-  */
- export type Accessor = GlTFChildOfRootProperty
- export type GlTFChildOfRootProperty = GlTFProperty
- /**
-  * A keyframe animation.
-  */
- export type Animation = GlTFChildOfRootProperty
- /**
-  * Metadata about the glTF asset.
-  */
- export type Asset = GlTFProperty
- /**
-  * A buffer points to binary geometry, animation, or skins.
-  */
- export type Buffer = GlTFChildOfRootProperty
- /**
-  * A view into a buffer generally representing a subset of the buffer.
-  */
- export type BufferView = GlTFChildOfRootProperty
- /**
-  * A camera's projection.  A node **MAY** reference a camera to apply a transform to place the camera in the scene.
-  */
- export type Camera = GlTFChildOfRootProperty
- /**
-  * Image data used to create a texture. Image **MAY** be referenced by an URI (or IRI) or a buffer view index.
-  */
- export type Image = Image1 & Image2
- export type Image1 = GlTFChildOfRootProperty
- export type Image2 =
-   | {
-       [k: string]: unknown
-     }
-   | {
-       [k: string]: unknown
-     }
- export type Image3 = Image1 & Image2
- /**
-  * The material appearance of a primitive.
-  */
- export type Material = GlTFChildOfRootProperty
- /**
-  * A set of primitives to be rendered.  Its global transform is defined by a node that references it.
-  */
- export type Mesh = GlTFChildOfRootProperty
- /**
-  * A node in the node hierarchy.  When the node contains `skin`, all `mesh.primitives` **MUST** contain `JOINTS_0` and `WEIGHTS_0` attributes.  A node **MAY** have either a `matrix` or any combination of `translation`/`rotation`/`scale` (TRS) properties. TRS properties are converted to matrices and postmultiplied in the `T * R * S` order to compose the transformation matrix; first the scale is applied to the vertices, then the rotation, and then the translation. If none are provided, the transform is the identity. When a node is targeted for animation (referenced by an animation.channel.target), `matrix` **MUST NOT** be present.
-  */
- export type Node = GlTFChildOfRootProperty
- /**
-  * Texture sampler properties for filtering and wrapping modes.
-  */
- export type Sampler = GlTFChildOfRootProperty
- export type GlTFId = number
- /**
-  * The root nodes of a scene.
-  */
- export type Scene = GlTFChildOfRootProperty
- /**
-  * Joints and matrices defining a skin.
-  */
- export type Skin = GlTFChildOfRootProperty
- /**
-  * A texture and its sampler.
-  */
- export type Texture = GlTFChildOfRootProperty
- 
- export interface GlTFProperty {
-   extensions?: Extension
-   extras?: Extras
-   [k: string]: unknown
- }
- /**
-  * JSON object with extension-specific objects.
-  */
- export interface Extension {
-   [k: string]: {
-     [k: string]: unknown
-   }
- }
- /**
-  * Application-specific data.
-  */
- export interface Extras {
-   [k: string]: unknown
- }
- export interface GlTF2 {
-   /**
-    * Names of glTF extensions used in this asset.
-    */
-   extensionsUsed?: [string, ...string[]]
-   /**
-    * Names of glTF extensions required to properly load this asset.
-    */
-   extensionsRequired?: [string, ...string[]]
-   /**
-    * An array of accessors.
-    */
-   accessors?: [Accessor, ...Accessor[]]
-   /**
-    * An array of keyframe animations.
-    */
-   animations?: [Animation, ...Animation[]]
-   /**
-    * Metadata about the glTF asset.
-    */
-   asset: Asset
-   /**
-    * An array of buffers.
-    */
-   buffers?: [Buffer, ...Buffer[]]
-   /**
-    * An array of bufferViews.
-    */
-   bufferViews?: [BufferView, ...BufferView[]]
-   /**
-    * An array of cameras.
-    */
-   cameras?: [Camera, ...Camera[]]
-   /**
-    * An array of images.
-    */
-   images?: [Image, ...Image3[]]
-   /**
-    * An array of materials.
-    */
-   materials?: [Material, ...Material[]]
-   /**
-    * An array of meshes.
-    */
-   meshes?: [Mesh, ...Mesh[]]
-   /**
-    * An array of nodes.
-    */
-   nodes?: [Node, ...Node[]]
-   /**
-    * An array of samplers.
-    */
-   samplers?: [Sampler, ...Sampler[]]
-   /**
-    * The index of the default scene.
-    */
-   scene?: GlTFId
-   /**
-    * An array of scenes.
-    */
-   scenes?: [Scene, ...Scene[]]
-   /**
-    * An array of skins.
-    */
-   skins?: [Skin, ...Skin[]]
-   /**
-    * An array of textures.
-    */
-   textures?: [Texture, ...Texture[]]
-   extensions?: unknown
-   extras?: unknown
-   [k: string]: unknown
- }
- 
+ export interface glTF {
+    /**
+     * An array of accessors.
+     */
+    accessors?: Accessor[];
+    /**
+     * An array of keyframe animations.
+     */
+    animations?: Animation[];
+    /**
+     * Metadata about the glTF asset.
+     */
+    asset: Asset;
+    /**
+     * An array of buffers.
+     */
+    buffers?: Buffer[];
+    /**
+     * An array of bufferViews.
+     */
+    bufferViews?: BufferView[];
+    /**
+     * An array of cameras.
+     */
+    cameras?:    Camera[];
+    extensions?: { [key: string]: { [key: string]: any } };
+    /**
+     * Names of glTF extensions required to properly load this asset.
+     */
+    extensionsRequired?: string[];
+    /**
+     * Names of glTF extensions used in this asset.
+     */
+    extensionsUsed?: string[];
+    extras?:         any;
+    /**
+     * An array of images.
+     */
+    images?: Image[];
+    /**
+     * An array of materials.
+     */
+    materials?: Material[];
+    /**
+     * An array of meshes.
+     */
+    meshes?: Mesh[];
+    /**
+     * An array of nodes.
+     */
+    nodes?: Node[];
+    /**
+     * An array of samplers.
+     */
+    samplers?: Sampler[];
+    /**
+     * The index of the default scene.
+     */
+    scene?: number;
+    /**
+     * An array of scenes.
+     */
+    scenes?: Scene[];
+    /**
+     * An array of skins.
+     */
+    skins?: Skin[];
+    /**
+     * An array of textures.
+     */
+    textures?: Texture[];
+}
+
+/**
+ * A typed view into a buffer view that contains raw binary data.
+ */
+export interface Accessor {
+    /**
+     * The index of the bufferView.
+     */
+    bufferView?: number;
+    /**
+     * The offset relative to the start of the buffer view in bytes.
+     */
+    byteOffset?: number;
+    /**
+     * The datatype of the accessor's components.
+     */
+    componentType: number;
+    /**
+     * The number of elements referenced by this accessor.
+     */
+    count:       number;
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * Maximum value of each component in this accessor.
+     */
+    max?: number[];
+    /**
+     * Minimum value of each component in this accessor.
+     */
+    min?: number[];
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * Specifies whether integer data values are normalized before usage.
+     */
+    normalized?: boolean;
+    /**
+     * Sparse storage of elements that deviate from their initialization value.
+     */
+    sparse?: AccessorSparse;
+    /**
+     * Specifies if the accessor's elements are scalars, vectors, or matrices.
+     */
+    type: any;
+}
+
+/**
+ * Sparse storage of elements that deviate from their initialization value.
+ *
+ * Sparse storage of accessor values that deviate from their initialization value.
+ */
+export interface AccessorSparse {
+    /**
+     * Number of deviating accessor values stored in the sparse array.
+     */
+    count:       number;
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * An object pointing to a buffer view containing the indices of deviating accessor values.
+     * The number of indices is equal to `count`. Indices **MUST** strictly increase.
+     */
+    indices: AccessorSparseIndices;
+    /**
+     * An object pointing to a buffer view containing the deviating accessor values.
+     */
+    values: AccessorSparseValues;
+}
+
+/**
+ * An object pointing to a buffer view containing the indices of deviating accessor values.
+ * The number of indices is equal to `count`. Indices **MUST** strictly increase.
+ *
+ * An object pointing to a buffer view containing the indices of deviating accessor values.
+ * The number of indices is equal to `accessor.sparse.count`. Indices **MUST** strictly
+ * increase.
+ */
+export interface AccessorSparseIndices {
+    /**
+     * The index of the buffer view with sparse indices. The referenced buffer view **MUST NOT**
+     * have its `target` or `byteStride` properties defined. The buffer view and the optional
+     * `byteOffset` **MUST** be aligned to the `componentType` byte length.
+     */
+    bufferView: number;
+    /**
+     * The offset relative to the start of the buffer view in bytes.
+     */
+    byteOffset?: number;
+    /**
+     * The indices data type.
+     */
+    componentType: number;
+    extensions?:   { [key: string]: { [key: string]: any } };
+    extras?:       any;
+}
+
+/**
+ * An object pointing to a buffer view containing the deviating accessor values.
+ *
+ * An object pointing to a buffer view containing the deviating accessor values. The number
+ * of elements is equal to `accessor.sparse.count` times number of components. The elements
+ * have the same component type as the base accessor. The elements are tightly packed. Data
+ * **MUST** be aligned following the same rules as the base accessor.
+ */
+export interface AccessorSparseValues {
+    /**
+     * The index of the bufferView with sparse values. The referenced buffer view **MUST NOT**
+     * have its `target` or `byteStride` properties defined.
+     */
+    bufferView: number;
+    /**
+     * The offset relative to the start of the bufferView in bytes.
+     */
+    byteOffset?: number;
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+}
+
+/**
+ * A keyframe animation.
+ */
+export interface Animation {
+    /**
+     * An array of animation channels. An animation channel combines an animation sampler with a
+     * target property being animated. Different channels of the same animation **MUST NOT**
+     * have the same targets.
+     */
+    channels:    AnimationChannel[];
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * An array of animation samplers. An animation sampler combines timestamps with a sequence
+     * of output values and defines an interpolation algorithm.
+     */
+    samplers: AnimationSampler[];
+}
+
+/**
+ * An animation channel combines an animation sampler with a target property being animated.
+ */
+export interface AnimationChannel {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The index of a sampler in this animation used to compute the value for the target.
+     */
+    sampler: number;
+    /**
+     * The descriptor of the animated property.
+     */
+    target: AnimationChannelTarget;
+}
+
+/**
+ * The descriptor of the animated property.
+ */
+export interface AnimationChannelTarget {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The index of the node to animate. When undefined, the animated object **MAY** be defined
+     * by an extension.
+     */
+    node?: number;
+    /**
+     * The name of the node's TRS property to animate, or the `"weights"` of the Morph Targets
+     * it instantiates. For the `"translation"` property, the values that are provided by the
+     * sampler are the translation along the X, Y, and Z axes. For the `"rotation"` property,
+     * the values are a quaternion in the order (x, y, z, w), where w is the scalar. For the
+     * `"scale"` property, the values are the scaling factors along the X, Y, and Z axes.
+     */
+    path: any;
+}
+
+/**
+ * An animation sampler combines timestamps with a sequence of output values and defines an
+ * interpolation algorithm.
+ */
+export interface AnimationSampler {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The index of an accessor containing keyframe timestamps.
+     */
+    input: number;
+    /**
+     * Interpolation algorithm.
+     */
+    interpolation?: any;
+    /**
+     * The index of an accessor, containing keyframe output values.
+     */
+    output: number;
+}
+
+/**
+ * Metadata about the glTF asset.
+ */
+export interface Asset {
+    /**
+     * A copyright message suitable for display to credit the content creator.
+     */
+    copyright?:  string;
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * Tool that generated this glTF model.  Useful for debugging.
+     */
+    generator?: string;
+    /**
+     * The minimum glTF version in the form of `<major>.<minor>` that this asset targets. This
+     * property **MUST NOT** be greater than the asset version.
+     */
+    minVersion?: string;
+    /**
+     * The glTF version in the form of `<major>.<minor>` that this asset targets.
+     */
+    version: string;
+}
+
+/**
+ * A view into a buffer generally representing a subset of the buffer.
+ */
+export interface BufferView {
+    /**
+     * The index of the buffer.
+     */
+    buffer: number;
+    /**
+     * The length of the bufferView in bytes.
+     */
+    byteLength: number;
+    /**
+     * The offset into the buffer in bytes.
+     */
+    byteOffset?: number;
+    /**
+     * The stride, in bytes.
+     */
+    byteStride?: number;
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * The hint representing the intended GPU buffer type to use with this buffer view.
+     */
+    target?: number;
+}
+
+/**
+ * A buffer points to binary geometry, animation, or skins.
+ */
+export interface Buffer {
+    /**
+     * The length of the buffer in bytes.
+     */
+    byteLength:  number;
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * The URI (or IRI) of the buffer.
+     */
+    uri?: string;
+}
+
+/**
+ * A camera's projection.  A node **MAY** reference a camera to apply a transform to place
+ * the camera in the scene.
+ */
+export interface Camera {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * An orthographic camera containing properties to create an orthographic projection matrix.
+     * This property **MUST NOT** be defined when `perspective` is defined.
+     */
+    orthographic?: CameraOrthographic;
+    /**
+     * A perspective camera containing properties to create a perspective projection matrix.
+     * This property **MUST NOT** be defined when `orthographic` is defined.
+     */
+    perspective?: CameraPerspective;
+    /**
+     * Specifies if the camera uses a perspective or orthographic projection.
+     */
+    type: any;
+}
+
+/**
+ * An orthographic camera containing properties to create an orthographic projection matrix.
+ * This property **MUST NOT** be defined when `perspective` is defined.
+ *
+ * An orthographic camera containing properties to create an orthographic projection matrix.
+ */
+export interface CameraOrthographic {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The floating-point horizontal magnification of the view. This value **MUST NOT** be equal
+     * to zero. This value **SHOULD NOT** be negative.
+     */
+    xmag: number;
+    /**
+     * The floating-point vertical magnification of the view. This value **MUST NOT** be equal
+     * to zero. This value **SHOULD NOT** be negative.
+     */
+    ymag: number;
+    /**
+     * The floating-point distance to the far clipping plane. This value **MUST NOT** be equal
+     * to zero. `zfar` **MUST** be greater than `znear`.
+     */
+    zfar: number;
+    /**
+     * The floating-point distance to the near clipping plane.
+     */
+    znear: number;
+}
+
+/**
+ * A perspective camera containing properties to create a perspective projection matrix.
+ * This property **MUST NOT** be defined when `orthographic` is defined.
+ *
+ * A perspective camera containing properties to create a perspective projection matrix.
+ */
+export interface CameraPerspective {
+    /**
+     * The floating-point aspect ratio of the field of view.
+     */
+    aspectRatio?: number;
+    extensions?:  { [key: string]: { [key: string]: any } };
+    extras?:      any;
+    /**
+     * The floating-point vertical field of view in radians. This value **SHOULD** be less than
+     * π.
+     */
+    yfov: number;
+    /**
+     * The floating-point distance to the far clipping plane.
+     */
+    zfar?: number;
+    /**
+     * The floating-point distance to the near clipping plane.
+     */
+    znear: number;
+}
+
+/**
+ * Image data used to create a texture. Image **MAY** be referenced by an URI (or IRI) or a
+ * buffer view index.
+ */
+export interface Image {
+    /**
+     * The index of the bufferView that contains the image. This field **MUST NOT** be defined
+     * when `uri` is defined.
+     */
+    bufferView?: number;
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The image's media type. This field **MUST** be defined when `bufferView` is defined.
+     */
+    mimeType?: any;
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * The URI (or IRI) of the image.
+     */
+    uri?: string;
+}
+
+/**
+ * The material appearance of a primitive.
+ */
+export interface Material {
+    /**
+     * The alpha cutoff value of the material.
+     */
+    alphaCutoff?: number;
+    /**
+     * The alpha rendering mode of the material.
+     */
+    alphaMode?: any;
+    /**
+     * Specifies whether the material is double sided.
+     */
+    doubleSided?: boolean;
+    /**
+     * The factors for the emissive color of the material.
+     */
+    emissiveFactor?: number[];
+    /**
+     * The emissive texture.
+     */
+    emissiveTexture?: TextureInfo;
+    extensions?:      { [key: string]: { [key: string]: any } };
+    extras?:          any;
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * The tangent space normal texture.
+     */
+    normalTexture?: MaterialNormalTextureInfoObject;
+    /**
+     * The occlusion texture.
+     */
+    occlusionTexture?: MaterialOcclusionTextureInfoObject;
+    /**
+     * A set of parameter values that are used to define the metallic-roughness material model
+     * from Physically Based Rendering (PBR) methodology. When undefined, all the default values
+     * of `pbrMetallicRoughness` **MUST** apply.
+     */
+    pbrMetallicRoughness?: MaterialPBRMetallicRoughness;
+}
+
+/**
+ * The emissive texture.
+ *
+ * The base color texture.
+ *
+ * The metallic-roughness texture.
+ *
+ * Reference to a texture.
+ */
+export interface TextureInfo {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The index of the texture.
+     */
+    index: number;
+    /**
+     * The set index of texture's TEXCOORD attribute used for texture coordinate mapping.
+     */
+    texCoord?: number;
+}
+
+/**
+ * The tangent space normal texture.
+ *
+ * Reference to a texture.
+ */
+export interface MaterialNormalTextureInfoObject {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The index of the texture.
+     */
+    index: number;
+    /**
+     * The scalar parameter applied to each normal vector of the normal texture.
+     */
+    scale?: number;
+    /**
+     * The set index of texture's TEXCOORD attribute used for texture coordinate mapping.
+     */
+    texCoord?: number;
+}
+
+/**
+ * The occlusion texture.
+ *
+ * Reference to a texture.
+ */
+export interface MaterialOcclusionTextureInfoObject {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The index of the texture.
+     */
+    index: number;
+    /**
+     * A scalar multiplier controlling the amount of occlusion applied.
+     */
+    strength?: number;
+    /**
+     * The set index of texture's TEXCOORD attribute used for texture coordinate mapping.
+     */
+    texCoord?: number;
+}
+
+/**
+ * A set of parameter values that are used to define the metallic-roughness material model
+ * from Physically Based Rendering (PBR) methodology. When undefined, all the default values
+ * of `pbrMetallicRoughness` **MUST** apply.
+ *
+ * A set of parameter values that are used to define the metallic-roughness material model
+ * from Physically-Based Rendering (PBR) methodology.
+ */
+export interface MaterialPBRMetallicRoughness {
+    /**
+     * The factors for the base color of the material.
+     */
+    baseColorFactor?: number[];
+    /**
+     * The base color texture.
+     */
+    baseColorTexture?: TextureInfo;
+    extensions?:       { [key: string]: { [key: string]: any } };
+    extras?:           any;
+    /**
+     * The factor for the metalness of the material.
+     */
+    metallicFactor?: number;
+    /**
+     * The metallic-roughness texture.
+     */
+    metallicRoughnessTexture?: TextureInfo;
+    /**
+     * The factor for the roughness of the material.
+     */
+    roughnessFactor?: number;
+}
+
+/**
+ * A set of primitives to be rendered.  Its global transform is defined by a node that
+ * references it.
+ */
+export interface Mesh {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * An array of primitives, each defining geometry to be rendered.
+     */
+    primitives: MeshPrimitive[];
+    /**
+     * Array of weights to be applied to the morph targets. The number of array elements
+     * **MUST** match the number of morph targets.
+     */
+    weights?: number[];
+}
+
+/**
+ * Geometry to be rendered with the given material.
+ */
+export interface MeshPrimitive {
+    /**
+     * A plain JSON object, where each key corresponds to a mesh attribute semantic and each
+     * value is the index of the accessor containing attribute's data.
+     */
+    attributes:  { [key: string]: number };
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The index of the accessor that contains the vertex indices.
+     */
+    indices?: number;
+    /**
+     * The index of the material to apply to this primitive when rendering.
+     */
+    material?: number;
+    /**
+     * The topology type of primitives to render.
+     */
+    mode?: number;
+    /**
+     * An array of morph targets.
+     */
+    targets?: { [key: string]: number }[];
+}
+
+/**
+ * A node in the node hierarchy.  When the node contains `skin`, all `mesh.primitives`
+ * **MUST** contain `JOINTS_0` and `WEIGHTS_0` attributes.  A node **MAY** have either a
+ * `matrix` or any combination of `translation`/`rotation`/`scale` (TRS) properties. TRS
+ * properties are converted to matrices and postmultiplied in the `T * R * S` order to
+ * compose the transformation matrix; first the scale is applied to the vertices, then the
+ * rotation, and then the translation. If none are provided, the transform is the identity.
+ * When a node is targeted for animation (referenced by an animation.channel.target),
+ * `matrix` **MUST NOT** be present.
+ */
+export interface Node {
+    /**
+     * The index of the camera referenced by this node.
+     */
+    camera?: number;
+    /**
+     * The indices of this node's children.
+     */
+    children?:   number[];
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * A floating-point 4x4 transformation matrix stored in column-major order.
+     */
+    matrix?: number[];
+    /**
+     * The index of the mesh in this node.
+     */
+    mesh?: number;
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * The node's unit quaternion rotation in the order (x, y, z, w), where w is the scalar.
+     */
+    rotation?: number[];
+    /**
+     * The node's non-uniform scale, given as the scaling factors along the x, y, and z axes.
+     */
+    scale?: number[];
+    /**
+     * The index of the skin referenced by this node.
+     */
+    skin?: number;
+    /**
+     * The node's translation along the x, y, and z axes.
+     */
+    translation?: number[];
+    /**
+     * The weights of the instantiated morph target. The number of array elements **MUST** match
+     * the number of morph targets of the referenced mesh. When defined, `mesh` **MUST** also be
+     * defined.
+     */
+    weights?: number[];
+}
+
+/**
+ * Texture sampler properties for filtering and wrapping modes.
+ */
+export interface Sampler {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * Magnification filter.
+     */
+    magFilter?: number;
+    /**
+     * Minification filter.
+     */
+    minFilter?: number;
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * S (U) wrapping mode.
+     */
+    wrapS?: number;
+    /**
+     * T (V) wrapping mode.
+     */
+    wrapT?: number;
+}
+
+/**
+ * The root nodes of a scene.
+ */
+export interface Scene {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * The indices of each root node.
+     */
+    nodes?: number[];
+}
+
+/**
+ * Joints and matrices defining a skin.
+ */
+export interface Skin {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The index of the accessor containing the floating-point 4x4 inverse-bind matrices.
+     */
+    inverseBindMatrices?: number;
+    /**
+     * Indices of skeleton nodes, used as joints in this skin.
+     */
+    joints: number[];
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * The index of the node used as a skeleton root.
+     */
+    skeleton?: number;
+}
+
+/**
+ * A texture and its sampler.
+ */
+export interface Texture {
+    extensions?: { [key: string]: { [key: string]: any } };
+    extras?:     any;
+    /**
+     * The user-defined name of this object.
+     */
+    name?: string;
+    /**
+     * The index of the sampler used by this texture. When undefined, a sampler with repeat
+     * wrapping and auto filtering **SHOULD** be used.
+     */
+    sampler?: number;
+    /**
+     * The index of the image used by this texture. When undefined, an extension or other
+     * mechanism **SHOULD** supply an alternate texture source, otherwise behavior is undefined.
+     */
+    source?: number;
+}
