@@ -4,15 +4,15 @@
     "title": "Animation Channel",
     "type": "object",
     "description": "An animation channel combines an animation sampler with a target property being animated.",
-    "allOf": [ { "$ref": "glTFProperty.schema.json" } ],
+    "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFProperty.schema.json" } ],
     "properties": {
         "sampler": {
-            "allOf": [ { "$ref": "glTFid.schema.json" } ],
+            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json" } ],
             "description": "The index of a sampler in this animation used to compute the value for the target.",
             "gltf_detailedDescription": "The index of a sampler in this animation used to compute the value for the target, e.g., a node's translation, rotation, or scale (TRS)."
         },
         "target": {
-            "allOf": [ { "$ref": "animation.channel.target.schema.json" } ],
+            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/animation.channel.target.schema.json" } ],
             "description": "The descriptor of the animated property."
         },
         "extensions": { },

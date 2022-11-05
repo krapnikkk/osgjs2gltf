@@ -4,7 +4,7 @@
     "title": "glTF",
     "type": "object",
     "description": "The root object for a glTF asset.",
-    "allOf": [ { "$ref": "glTFProperty.schema.json" } ],
+    "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFProperty.schema.json" } ],
     "properties": {
         "extensionsUsed": {
             "type": "array",
@@ -28,7 +28,7 @@
             "type": "array",
             "description": "An array of accessors.",
             "items": {
-                "$ref": "accessor.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/accessor.schema.json"
             },
             "minItems": 1,
             "gltf_detailedDescription": "An array of accessors.  An accessor is a typed view into a bufferView."
@@ -37,19 +37,19 @@
             "type": "array",
             "description": "An array of keyframe animations.",
             "items": {
-                "$ref": "animation.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/animation.schema.json"
             },
             "minItems": 1
         },
         "asset": {
-            "allOf": [ { "$ref": "asset.schema.json" } ],
+            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/asset.schema.json" } ],
             "description": "Metadata about the glTF asset."
         },
         "buffers": {
             "type": "array",
             "description": "An array of buffers.",
             "items": {
-                "$ref": "buffer.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/buffer.schema.json"
             },
             "minItems": 1,
             "gltf_detailedDescription": "An array of buffers.  A buffer points to binary geometry, animation, or skins."
@@ -58,7 +58,7 @@
             "type": "array",
             "description": "An array of bufferViews.",
             "items": {
-                "$ref": "bufferView.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/bufferView.schema.json"
             },
             "minItems": 1,
             "gltf_detailedDescription": "An array of bufferViews.  A bufferView is a view into a buffer generally representing a subset of the buffer."
@@ -67,7 +67,7 @@
             "type": "array",
             "description": "An array of cameras.",
             "items": {
-                "$ref": "camera.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/camera.schema.json"
             },
             "minItems": 1,
             "gltf_detailedDescription": "An array of cameras.  A camera defines a projection matrix."
@@ -76,7 +76,7 @@
             "type": "array",
             "description": "An array of images.",
             "items": {
-                "$ref": "image.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/image.schema.json"
             },
             "minItems": 1,
             "gltf_detailedDescription": "An array of images.  An image defines data used to create a texture."
@@ -85,7 +85,7 @@
             "type": "array",
             "description": "An array of materials.",
             "items": {
-                "$ref": "material.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/material.schema.json"
             },
             "minItems": 1,
             "gltf_detailedDescription": "An array of materials.  A material defines the appearance of a primitive."
@@ -94,7 +94,7 @@
             "type": "array",
             "description": "An array of meshes.",
             "items": {
-                "$ref": "mesh.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/mesh.schema.json"
             },
             "minItems": 1,
             "gltf_detailedDescription": "An array of meshes.  A mesh is a set of primitives to be rendered."
@@ -103,7 +103,7 @@
             "type": "array",
             "description": "An array of nodes.",
             "items": {
-                "$ref": "node.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/node.schema.json"
             },
             "minItems": 1
         },
@@ -111,13 +111,13 @@
             "type": "array",
             "description": "An array of samplers.",
             "items": {
-                "$ref": "sampler.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/sampler.schema.json"
             },
             "minItems": 1,
             "gltf_detailedDescription": "An array of samplers.  A sampler contains properties for texture filtering and wrapping modes."
         },
         "scene": {
-            "allOf": [ { "$ref": "glTFid.schema.json" } ],
+            "allOf": [ { "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/glTFid.schema.json" } ],
             "description": "The index of the default scene.",
             "gltf_detailedDescription": "The index of the default scene.  This property **MUST NOT** be defined, when `scenes` is undefined."
         },
@@ -125,7 +125,7 @@
             "type": "array",
             "description": "An array of scenes.",
             "items": {
-                "$ref": "scene.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/scene.schema.json"
             },
             "minItems": 1
         },
@@ -133,7 +133,7 @@
             "type": "array",
             "description": "An array of skins.",
             "items": {
-                "$ref": "skin.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/skin.schema.json"
             },
             "minItems": 1,
             "gltf_detailedDescription": "An array of skins.  A skin is defined by joints and matrices."
@@ -142,7 +142,7 @@
             "type": "array",
             "description": "An array of textures.",
             "items": {
-                "$ref": "texture.schema.json"
+                "$ref": "https://raw.githubusercontent.com/krapnikkk/gltf-creator/main/schema/texture.schema.json"
             },
             "minItems": 1
         },
