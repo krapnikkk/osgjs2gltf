@@ -1,10 +1,12 @@
+import { Buffer } from "buffer";
+import mime from "mime";
 import RuntimeError from "./RuntimeError";
 import { defined } from "./utils";
 
 // const Cesium = require("cesium");
-const mime = require("mime");
+// const mime = require("mime");
 const PNG = require("pngjs").PNG;
-const Promise = require("bluebird");
+// const Promise = require("bluebird");
 // const getBufferPadded = require("./getBufferPadded");
 // const gltfToGlb = require("./gltfToGlb");
 
