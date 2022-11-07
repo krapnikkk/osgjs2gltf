@@ -1,11 +1,15 @@
 import { Buffer } from "buffer";
 import mime from "mime";
+import { glTF,Texture,Image } from "../@types/gltf";
+import getBufferPadded from "./getBufferPadded";
+import gltfToGlb from "./gltfToGlb";
 import RuntimeError from "./RuntimeError";
+import { IOption } from "./typing";
 import { defined } from "./utils";
 
 // const Cesium = require("cesium");
 // const mime = require("mime");
-const PNG = require("pngjs").PNG;
+// const PNG = require("pngjs").PNG;
 // const Promise = require("bluebird");
 // const getBufferPadded = require("./getBufferPadded");
 // const gltfToGlb = require("./gltfToGlb");
@@ -22,7 +26,7 @@ const PNG = require("pngjs").PNG;
  *
  * @private
  */
-function writeGltf(gltf, options) {
+function writeGltf(gltf:glTF, options:IOption) {
   return encodeTextures(gltf).then(function () {
     const binary = options.binary;
     const separate = options.separate;
@@ -70,15 +74,15 @@ function encodePng(texture) {
   png.data = texture.pixels;
 
   return new Promise(function (resolve, reject) {
-    const chunks = [];
-    const stream = png.pack();
-    stream.on("data", function (chunk) {
-      chunks.push(chunk);
-    });
-    stream.on("end", function () {
-      resolve(Buffer.concat(chunks));
-    });
-    stream.on("error", reject);
+    // const chunks = [];
+    // const stream = png.pack();
+    // stream.on("data", function (chunk) {
+    //   chunks.push(chunk);
+    // });
+    // stream.on("end", function () {
+    //   resolve(Buffer.concat(chunks));
+    // });
+    // stream.on("error", reject);
   });
 }
 
@@ -94,7 +98,7 @@ function encodeTexture(texture) {
   }
 }
 
-function encodeTextures(gltf) {
+function encodeTextures(gltf:glTF) {
   // Dynamically generated PBR textures need to be encoded to png prior to being saved
   const encodePromises = [];
   const images = gltf.images;
@@ -105,7 +109,7 @@ function encodeTextures(gltf) {
   return Promise.all(encodePromises);
 }
 
-function deleteExtras(gltf) {
+function deleteExtras(gltf:glTF) {
   const buffers = gltf.buffers;
   const buffersLength = buffers.length;
   for (let i = 0; i < buffersLength; ++i) {
@@ -119,7 +123,7 @@ function deleteExtras(gltf) {
   }
 }
 
-function removeEmpty(json) {
+function removeEmpty(json:any) {
   Object.keys(json).forEach(function (key) {
     if (
       !defined(json[key]) ||
@@ -132,7 +136,7 @@ function removeEmpty(json) {
   });
 }
 
-function writeSeparateBuffers(gltf, options) {
+function writeSeparateBuffers(gltf:glTF, options:IOption) {
   const buffers = gltf.buffers;
   return Promise.map(
     buffers,
@@ -146,7 +150,7 @@ function writeSeparateBuffers(gltf, options) {
   );
 }
 
-function writeSeparateTextures(gltf, options) {
+function writeSeparateTextures(gltf:glTF, options:IOption) {
   const images = gltf.images;
   return Promise.map(
     images,
@@ -160,7 +164,7 @@ function writeSeparateTextures(gltf, options) {
   );
 }
 
-function writeEmbeddedBuffer(gltf) {
+function writeEmbeddedBuffer(gltf:glTF) {
   const buffer = gltf.buffers[0];
   const source = buffer.extras._obj2gltf.source;
 
@@ -176,7 +180,7 @@ function writeEmbeddedBuffer(gltf) {
   )}`;
 }
 
-function writeEmbeddedTextures(gltf) {
+function writeEmbeddedTextures(gltf:glTF) {
   const buffer = gltf.buffers[0];
   const bufferExtras = buffer.extras._obj2gltf;
   const bufferSource = bufferExtras.source;

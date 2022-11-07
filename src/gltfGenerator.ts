@@ -5,7 +5,7 @@ import Texture from "./Texture";
 import { defaultValue, defined } from "./utils";
 import WebGLConstants from "./WebGLConstants";
 
-// const BUFFER_MAX_BYTE_LENGTH = Buffer.constants.MAX_LENGTH;
+const BUFFER_MAX_BYTE_LENGTH = 4294967296;
 // const Cesium = require("cesium");
 // const getBufferPadded = require("./getBufferPadded");
 // const getDefaultMaterial = require("./loadMtl").getDefaultMaterial;
@@ -128,7 +128,7 @@ function gltfGenerator(objData, options) {
     return gltf;
 }
 
-function addCombinedBufferView(gltf:glTF, buffers, accessors:Accessor[], byteStride:number, target:number) {
+function addCombinedBufferView(gltf, buffers, accessors:Accessor[], byteStride:number, target:number) {
     const length = buffers.length;
     if (length === 0) {
         return;
@@ -155,7 +155,7 @@ function addCombinedBufferView(gltf:glTF, buffers, accessors:Accessor[], byteStr
     });
 }
 
-function addCombinedBuffers(gltf:glTF, bufferState, name) {
+function addCombinedBuffers(gltf, bufferState, name) {
     addCombinedBufferView(
         gltf,
         bufferState.positionBuffers,
@@ -239,7 +239,7 @@ function addSeparateBufferView(
 }
 
 function addSeparateBufferViews(
-    gltf,
+    gltf:glTF,
     buffers,
     accessors,
     byteStride,
@@ -306,7 +306,7 @@ function addBuffers(gltf, bufferState, name, separate) {
         buffersByteLength += buffers[i].length;
     }
 
-    if (separate && buffersByteLength > createGltf._getBufferMaxByteLength()) {
+    if (separate && buffersByteLength > BUFFER_MAX_BYTE_LENGTH) {
         // Don't combine buffers if the combined buffer will exceed the Node limit.
         addSeparateBuffers(gltf, bufferState, name);
     } else {
@@ -314,7 +314,7 @@ function addBuffers(gltf, bufferState, name, separate) {
     }
 }
 
-function addTexture(gltf, texture) {
+function addTexture(gltf:glTF, texture) {
     const imageName = texture.name;
     const textureName = texture.name;
     const imageIndex = gltf.images.length;
@@ -336,7 +336,7 @@ function addTexture(gltf, texture) {
     return textureIndex;
 }
 
-function getTexture(gltf, texture) {
+function getTexture(gltf:glTF, texture) {
     let textureIndex;
     const images = gltf.images;
     const length = images.length;
@@ -348,7 +348,7 @@ function getTexture(gltf, texture) {
     }
 
     if (!defined(textureIndex)) {
-        textureIndex = addTexture(gltf, texture);
+        textureIndex = addTexture(gltf:glTF, texture);
     }
 
     return {
@@ -356,7 +356,7 @@ function getTexture(gltf, texture) {
     };
 }
 
-function cloneMaterial(material, removeTextures) {
+function cloneMaterial(material:Material, removeTextures) {
     if (typeof material !== "object") {
         return material;
     } else if (material instanceof Texture) {
