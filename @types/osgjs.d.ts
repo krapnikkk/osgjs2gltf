@@ -1,4 +1,4 @@
-export interface OSGjs {
+export interface Scene {
     _name: string
     _instanceID: number
     children: Node[]
