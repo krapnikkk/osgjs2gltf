@@ -1,5 +1,5 @@
 {
-  "name": "gltf-creator",
+  "name": "osg2gltf",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,11 +10,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/mime": "^3.0.1",
     "typescript": "^4.8.4"
-  },
-  "dependencies": {
-    "buffer": "^6.0.3",
-    "mime": "^3.0.0"
   }
 }

@@ -1,3 +1,5 @@
+import { OSGJS } from "../@types/OSGJS";
+
 const primitiveSet = {
     "POINTS": 0,
     "LINES": 1,
@@ -62,9 +64,7 @@ function decodeNode(nodes) {
         if(typeof _name == "undefined"){
             _name = ++idx;
         }
-        let node = {
-            
-        };
+        let node = Object.create({});
         if(children.length>0){
             decodeNode(children)
             let arr = []
@@ -145,5 +145,5 @@ function decodeAccessors(){
     
 }
 
-decodeScene(temp1)
-decodeNode(scene.children)
+// decodeScene(OSGJS.Node)
+// decodeNode(scene.children)
