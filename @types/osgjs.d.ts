@@ -1,18 +1,9 @@
 declare module OSGJS {
-  class Node {
-    children: Node;
-    nodeMask: number;
-    private _boundingBox: BoundingBox;
-    private _boundingBoxComputed: boolean;
-    private _boundingSphere: BoundingSphere;
-    private _boundingSphereComputed: boolean;
-    private _cullCallback?: Function;
-    private _cullingActive: boolean;
-    private _instanceID
-  }
-
-  class Object {
-    typeID:number;
+  class OSGObject {
+    typeID: number;
+    _instanceID: number;
+    _userdata: { [key: string]: string };
+    _name: string;
     center?(result: glMatrix.vec3): number;
     className(): string;
     copy<T extends Object>(other: T): void;
@@ -32,22 +23,151 @@ declare module OSGJS {
     radius2(): number;
     setMax(max: glMatrix.vec3): void;
     setMin(min: glMatrix.vec3): void;
-    transformMat4(out:glMatrix.mat4,mat:glMatrix.mat4):void;
-    xMax():number;
-    xMin():number;
-    yMax():number;
-    yMin():number;
-    zMax():number;
-    zMin():number;
+    transformMat4(out: glMatrix.mat4, mat: glMatrix.mat4): void;
+    xMax(): number;
+    xMin(): number;
+    yMax(): number;
+    yMin(): number;
+    zMax(): number;
+    zMin(): number;
+    getInstanceID(): number;
+    setName(name: string): void;
+    getName(): string;
+    setUserData(data: any): void;
+    getUserData(): any;
   }
 
-  class OSGObject extends Object {
-    accept(nv:NodeVisitor):void;
-    addChild(child:OSGObject):void;
-    addParent(parents:OSGObject):void;
+  class Node extends OSGObject {
+    children: Node[];
+    nodeMask: number;
+    _parents: Node[];
+    private _boundingBox: BoundingBox;
+    private _boundingBoxComputed: boolean;
+    private _boundingSphere: BoundingSphere;
+    private _boundingSphereComputed: boolean;
+    private _cullCallback?: Function;
+    private _cullingActive: boolean;
+    accept(nv: NodeVisitor): void;
+    addChild(child: OSGObject): void;
+    addParent(parents: OSGObject): void;
   }
 
-  class NodeVisitor{
+  class MatrixTransform extends Transform {
+    matrix: glMatrix.mat4;
+    getMatrix(): glMatrix.mat4;
+    setMatrix(mat: glMatrix.mat4): void;
+    computeLocalToWorldMatrix(matrix: glMatrix.mat4): boolean;
+    computeWorldToLocalMatrix(): boolean;
+  }
+
+  class Transform extends Node {
+    referenceFrame: number;
+    getReferenceFrame(): number;
+    setReferenceFrame(val: number): void;
+    computeBoundingSphere(): BoundingSphere;
+  }
+
+  class Geometry extends Node {
+    _attributes: attributes;
+    _primitives: DrawElements[];
+    stateset: StateSet;
+    _cacheVertexAttributeBufferList: { [key: number]: BufferArray[] }
+    setVertexAttribArray(key: string, array: BufferArray): void;
+    getPrimitives(): DrawElements[];
+    getAttributes(): attributes;
+    getVertexAttributeList(): attributes;
+    getPrimitiveSetList(): DrawElements[];
+  }
+
+  class StateSet extends OSGObject {
+    _parents: Node[];
+    _drawID: number;uniforms: { [key: string]: AttributePair };
+  }
+
+  class Uniform {
+    _data: glMatrix.mat4;
+    _transpose: boolean;
+    _glCall: string;
+    _cache: undefined;
+    _name: string;
+    _type: undefined;
+    _isMatrix: boolean;
+  }
+
+  class AttributePair {
+    _object: Uniform;
+    _value: string;
+  }
+
+  enum DrawElementsDataFormat {
+    UNSIGNED_BYTE = 0x1401,
+    UNSIGNED_SHORT = 0x1403,
+    UNSIGNED_INT = 0x1405,
+  }
+
+  enum primitiveSet {
+    POINTS = 0x0000,
+    LINES = 0x0001,
+    LINE_LOOP = 0x0002,
+    LINE_STRIP = 0x0003,
+    TRIANGLES = 0x0004,
+    TRIANGLE_STRIP = 0x0005,
+    TRIANGLE_FAN = 0x0006,
+  }
+
+  class DrawElements {
+    mode: primitiveSet;
+    count: number;
+    offset: number;
+    indices: BufferArray;
+    uType: DrawElementsDataFormat;
+  }
+
+  class GLObject {
+    _sResourcesArrayCache: Map<WebGLRenderingContext, GLObject[]>;
+    _gl: WebGLRenderingContext;
+    getGraphicContext(): WebGLRenderingContext;
+  }
+
+  enum BufferArrayType {
+    ELEMENT_ARRAY_BUFFER = 0x8893,
+    ARRAY_BUFFER = 0x8892,
+    STATIC_DRAW = 0x88e4,
+    DYNAMIC_DRAW = 0x88e8,
+    STREAM_DRAW = 0x88e0,
+  }
+
+  enum AttributeType {
+    Float32Array = 0x1406,
+    Int16Array = 0x1402,
+    Uint16Array = 0x1403,
+    Int8Array = 0x1400,
+    Uint8Array = 0x1401,
+    Uint8ClampedArray = 0x1401,
+    Int32Array = 0x1404,
+    Uint32Array = 0x1405,
+  }
+
+  class BufferArray extends GLObject {
+    _instanceID: number;
+    _buffer: WebGLBuffer;
+    _usage: BufferArrayType;
+    _type: AttributeType;
+    _target: BufferArrayType;
+    _normalize: boolean;
+    _dirty: boolean;
+    _elements:Float32Array;
+    _itemSize: number;
+    _numItems:number;//this._elements.length / this._itemSize;
+    _sDeletedGLBufferArrayCache: Map<WebGLRenderingContext, WebGLBuffer[]>;
+  }
+
+  interface attributes {
+    Normal: BufferArray;
+    Vertex: BufferArray;
+  }
+
+  class NodeVisitor {
 
   }
 
@@ -59,394 +179,6 @@ declare module OSGJS {
   class BoundingSphere {
     private _radius: number;
     private _center: glMatrix.vec3;
-    copyBoundingBox(box:BoundingBox):void;
+    copyBoundingBox(box: BoundingBox): void;
   }
-}
-export interface Scene {
-  _name: string
-  _instanceID: number
-  children: Node[]
-  _parents: any[]
-  nodeMask: number
-  _boundingSphere: BoundingSphere
-  _boundingSphereComputed: boolean
-  _boundingBox: BoundingBox
-  _boundingBoxComputed: boolean
-  _updateCallbacks: any[]
-  _cullingActive: boolean
-  _numChildrenWithCullingDisabled: number
-  _numChildrenRequiringUpdateTraversal: number
-  _tmpBox: TmpBox2
-  referenceFrame: number
-  matrix: Matrix
-  stateset: Stateset
-}
-
-export interface Node {
-  _name: string
-  matrix: Matrix
-  _userdata: Userdata
-  _instanceID: number
-  children: Node[]
-  _parents: Parent[]
-  nodeMask: number
-  _boundingSphere: BoundingSphere
-  _boundingSphereComputed: boolean
-  _boundingBox: BoundingBox
-  _boundingBoxComputed: boolean
-  _updateCallbacks: any[]
-  _cullingActive: boolean
-  _numChildrenWithCullingDisabled: number
-  _numChildrenRequiringUpdateTraversal: number
-  _tmpBox: TmpBox
-  _attributes: Attributes
-  _primitives: Primi[]
-  _cacheDrawCall: CacheDrawCall
-  _vao: Vao
-  _cacheVertexAttributeBufferList: CacheVertexAttributeBufferList
-  stateset: Stateset
-}
-
-export interface Userdata {
-  pbrWorklow: string,
-  $ref?: string
-}
-
-export interface Parent {
-  $ref: string
-}
-
-export interface BoundingSphere {
-  _center: Center
-  _radius: number
-}
-
-export interface Center {
-  "0": number
-  "1": number
-  "2": number
-}
-
-export interface BoundingBox {
-  _min: Min
-  _max: Max
-}
-
-export interface Min {
-  "0": any
-  "1": any
-  "2": any
-}
-
-export interface Max {
-  "0": any
-  "1": any
-  "2": any
-}
-
-export interface TmpBox {
-  _min: Min
-  _max: Max
-}
-
-export interface Attributes {
-  Vertex: Vertex
-}
-
-export interface Vertex {
-  _instanceID: number
-  _dirty: boolean
-  _itemSize: number
-  _target: number
-  _type: number
-  _normalize: boolean
-  _elements: Elements
-  _usage: number
-}
-
-export interface Elements {
-  "0": number
-  "1": number
-  "2": number
-  "3": number
-  "4": number
-  "5": number
-  "6": number
-  "7": number
-  "8": number
-}
-
-export interface Primi {
-  mode: number
-  count: number
-  offset: number
-  indices: Indices
-  uType: number
-}
-
-export interface Indices {
-  _instanceID: number
-  _dirty: boolean
-  _itemSize: number
-  _target: number
-  _type: number
-  _normalize: boolean
-  _elements: Elements2
-  _usage: number
-}
-
-export interface Elements2 {
-  "0": number
-  "1": number
-  "2": number
-}
-
-export interface CacheDrawCall { }
-
-export interface Vao { }
-
-export interface CacheVertexAttributeBufferList { }
-
-export interface Stateset {
-  _userdata?: Userdata
-  _instanceID: number
-  _parents: Parent2[]
-  _attributeArray: any[]
-  _textureAttributeArrayList: any[]
-  _activeTextureAttributeUnit: any[]
-  _activeAttribute: any[]
-  _activeTextureAttribute: any[]
-  _binNumber: number
-  _shaderGeneratorPair: any
-  _updateCallbackList: any[]
-  uniforms: Uniforms
-  _hasUniform: boolean
-  _drawID: number
-}
-
-
-export interface Parent2 {
-  $ref: string
-}
-
-export interface Uniforms {
-  uBaseColorFactor: UBaseColorFactor
-  uMetallicFactor: UMetallicFactor
-  uRoughnessFactor: URoughnessFactor
-}
-
-export interface UBaseColorFactor {
-  _object: Object
-  _value: number
-}
-
-export interface Object {
-  _data: Data
-  _transpose: boolean
-  _glCall: string
-  _name: string
-  _type: string
-  _isMatrix: boolean
-}
-
-export interface Data {
-  "0": number
-  "1": number
-  "2": number
-  "3": number
-}
-
-export interface UMetallicFactor {
-  _object: Object2
-  _value: number
-}
-
-export interface Object2 {
-  _data: Data2
-  _transpose: boolean
-  _glCall: string
-  _name: string
-  _type: string
-  _isMatrix: boolean
-}
-
-export interface Data2 {
-  "0": number
-}
-
-export interface URoughnessFactor {
-  _object: Object3
-  _value: number
-}
-
-export interface Object3 {
-  _data: Data3
-  _transpose: boolean
-  _glCall: string
-  _name: string
-  _type: string
-  _isMatrix: boolean
-}
-
-export interface Data3 {
-  "0": number
-}
-
-export interface TmpBox2 {
-  _min: Min4
-  _max: Max4
-}
-
-export interface Min4 {
-  "0": any
-  "1": any
-  "2": any
-}
-
-export interface Max4 {
-  "0": any
-  "1": any
-  "2": any
-}
-
-export interface Matrix {
-  "0": number
-  "1": number
-  "2": number
-  "3": number
-  "4": number
-  "5": number
-  "6": number
-  "7": number
-  "8": number
-  "9": number
-  "10": number
-  "11": number
-  "12": number
-  "13": number
-  "14": number
-  "15": number
-}
-
-export interface Parent3 {
-  $ref: string
-}
-
-export interface Uniforms2 {
-  emissiveMap: EmissiveMap
-  aoMap: AoMap
-  normalMap: NormalMap
-  uEmissiveFactor: UEmissiveFactor
-  albedoMap: AlbedoMap
-  metallicRoughnessMap: MetallicRoughnessMap
-}
-
-export interface EmissiveMap {
-  _object: Object4
-  _value: number
-}
-
-export interface Object4 {
-  _data: Data4
-  _transpose: boolean
-  _glCall: string
-  _name: string
-  _type: string
-  _isMatrix: boolean
-}
-
-export interface Data4 {
-  "0": number
-}
-
-export interface AoMap {
-  _object: Object5
-  _value: number
-}
-
-export interface Object5 {
-  _data: Data5
-  _transpose: boolean
-  _glCall: string
-  _name: string
-  _type: string
-  _isMatrix: boolean
-}
-
-export interface Data5 {
-  "0": number
-}
-
-export interface NormalMap {
-  _object: Object6
-  _value: number
-}
-
-export interface Object6 {
-  _data: Data6
-  _transpose: boolean
-  _glCall: string
-  _name: string
-  _type: string
-  _isMatrix: boolean
-}
-
-export interface Data6 {
-  "0": number
-}
-
-export interface UEmissiveFactor {
-  _object: Object7
-  _value: number
-}
-
-export interface Object7 {
-  _data: Data7
-  _transpose: boolean
-  _glCall: string
-  _name: string
-  _type: string
-  _isMatrix: boolean
-}
-
-export interface Data7 {
-  "0": number
-  "1": number
-  "2": number
-}
-
-export interface AlbedoMap {
-  _object: Object8
-  _value: number
-}
-
-export interface Object8 {
-  _data: Data8
-  _transpose: boolean
-  _glCall: string
-  _name: string
-  _type: string
-  _isMatrix: boolean
-}
-
-export interface Data8 {
-  "0": number
-}
-
-export interface MetallicRoughnessMap {
-  _object: Object9
-  _value: number
-}
-
-export interface Object9 {
-  _data: Data9
-  _transpose: boolean
-  _glCall: string
-  _name: string
-  _type: string
-  _isMatrix: boolean
-}
-
-export interface Data9 {
-  "0": number
 }

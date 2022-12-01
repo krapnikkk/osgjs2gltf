@@ -1,5 +1,3 @@
-"use strict";
-exports.__esModule = true;
 var primitiveSet = {
     "POINTS": 0,
     "LINES": 1,
@@ -32,102 +30,130 @@ var gltf = {
     ],
     textures: []
 };
-var scene;
-var nodes = [];
-function decodeScene(osgjs) {
-    scene = osgjs.children[0];
-    osgjs.children[0].children.forEach(function (child) {
+var nodes = [], nodeId = 1000;
+var scenes = [];
+var meshId = 0, meshes = [];
+var materials = [], materialIdx = 0;
+function decodeScene(node) {
+    node.children[0].children.forEach(function (child) {
         var name = child._name;
         if (name)
             name = child._name.replace("_", "");
-        gltf.scenes[0].nodes.push(+name || 0);
+        // gltf.scenes[0].nodes.push(
+        scenes.push(+name || 0);
     });
 }
-var idx = 100;
-function decodeNode(nodes) {
-    for (var i = 0; i < nodes.length; i++) {
-        var child = nodes[i];
-        var clz = child.constructor.name;
-        var matrix = child.matrix, _name = child._name, children = child.children;
-        if (clz == "MatrixTransform" || clz == "Node") {
-        }
-        else if (clz == "Geometry") {
-            // if(_name == "Piston_123-844_0_Parts_1"){debugger}
-            decodeGeometry(child);
+function decodeNode(rootNodes, names) {
+    if (names === void 0) { names = []; }
+    for (var i = 0; i < rootNodes.length; i++) {
+        var child = rootNodes[i];
+        var clz = child.className();
+        var _name = child._name, children = child.children;
+        if (clz == "Geometry") {
             continue;
         }
-        else {
-            console.log("clz:", clz);
+        if (names.length > 0) {
+            _name = "".concat(names[i]);
         }
         if (typeof _name == "undefined") {
-            _name = ++idx;
+            _name = "".concat(++nodeId);
         }
         var node = Object.create({});
         if (children.length > 0) {
             decodeNode(children);
-            var arr = [];
+            var childIdArr = [];
             for (var j = 0; j < children.length; j++) {
                 var nodeChild = children[j];
-                var idx_1 = +parseName(nodeChild._name);
-                arr.push(idx_1);
+                var id = +parseNodeName(nodeChild._name);
+                var nodeClz = nodeChild.constructor.name;
+                if (typeof nodeChild._name != "undefined" &&
+                    (clz == 'MatrixTransform' || nodeClz == "Geometry") &&
+                    (Number.isNaN(id) || id >= nodeId)) {
+                    // mesh
+                    if (typeof nodeChild['meshId'] == "undefined") {
+                        nodeChild['meshId'] = meshId++;
+                        nodeChild['name'] = nodeChild._name;
+                        node.mesh = meshId;
+                        meshes.push(nodeChild);
+                    }
+                    else {
+                        node.mesh = nodeChild['meshId'];
+                    }
+                }
+                else {
+                    childIdArr.push(id);
+                }
             }
-            if (arr.length > 0)
-                node.children = arr;
+            if (childIdArr.length > 0)
+                node.children = childIdArr;
         }
-        if (matrix) {
-            var _matrix = [].concat(matrix);
-            node['matrix'] = JSON.parse("[".concat(matrix.toString(), "]"));
+        if (child['matrix']) {
+            node['matrix'] = JSON.parse("[".concat(child['matrix'].toString(), "]"));
         }
         if (_name) {
             node.name = _name;
         }
-        _name = parseName(_name);
-        gltf.nodes[+_name] = node;
+        if (typeof _name != "number") {
+            nodes[parseNodeName(_name)] = node;
+        }
+        else {
+            nodes[+_name] = node;
+        }
+        // gltf.nodes[+_name] = node;
     }
 }
-function parseName(_name) {
-    // console.log(_name);
-    if (typeof _name == "number") {
-        return _name;
-    }
-    else if (_name) {
-        var idx_2 = _name.indexOf("_");
-        if (idx_2 == 0) {
+function parseNodeName(_name) {
+    if (_name) {
+        if (_name.indexOf("_") == 0) {
             _name = _name.replace("_", "");
         }
-        // _name = typeof _name == "string" ? _name.replace("_",""):_name;
         return _name;
     }
     else {
-        return ++idx;
+        return ++nodeId;
     }
 }
-function decodeGeometry(geometry) {
-    var _attributes = geometry._attributes, _primitives = geometry._primitives, _cacheVertexAttributeBufferList = geometry._cacheVertexAttributeBufferList, _name = geometry._name;
+function decodeMesh(node) {
+    var _attributes = node._attributes, _primitives = node._primitives, _cacheVertexAttributeBufferList = node._cacheVertexAttributeBufferList, _name = node._name, stateset = node.stateset;
     var Normal = _attributes.Normal, Vertex = _attributes.Vertex;
-    var mesh = { "name": _name };
+    var mesh = { "name": _name, "primitives": [] };
     var primitivesNum = 1;
-    if (_cacheVertexAttributeBufferList) {
-        debugger;
-        var num = Object.keys(_cacheVertexAttributeBufferList).length;
+    if (stateset) { // materials
+        if (typeof stateset['materialId'] == 'undefined') {
+            stateset['materialId'] = materialIdx++;
+            materials.push(stateset);
+        }
+        else {
+        }
     }
-    if (Normal) { // NORMAL
+    if (_cacheVertexAttributeBufferList) {
+        // debugger;
+        var num = Object.keys(_cacheVertexAttributeBufferList).length;
+        for (var key in _cacheVertexAttributeBufferList) {
+            var VertexAttributeBuffer = _cacheVertexAttributeBufferList[key];
+            VertexAttributeBuffer.forEach(function (bufferArray) {
+            });
+        }
+    }
+    if (Normal) { // accessors->NORMAL
         var _elements = Normal._elements, _normalize = Normal._normalize, _instanceID = Normal._instanceID, _numItems = Normal._numItems, // count
         _type = Normal._type;
     }
-    if (Vertex) { // POSITION
-        var _elements = Vertex._elements, _normalize = Vertex._normalize, _instanceID = Vertex._instanceID, _numItems = Vertex._numItems, // count
+    if (Vertex) { // accessors->POSITION
+        var _elements = Vertex._elements, _normalize = Vertex._normalize, _instanceID = Vertex._instanceID, _numItems = Vertex._numItems, //this._elements.length / this._itemSize;
         _type = Vertex._type;
     }
-    var primitives = [];
     if (_primitives) {
         _primitives.forEach(function (primitive) {
-            primitives.push(primitive.mode);
+            console.log(primitive);
         });
-        debugger;
     }
 }
-function decodeAccessors() {
+function decodeOSGJS(root) {
+    decodeScene(root);
+    decodeNode(root.children, scenes);
+    meshes.forEach(function (mesh) {
+        decodeMesh(mesh);
+    });
 }
-// decodeScene(OSGJS.Node)
-// decodeNode(scene.children)
+export {};
