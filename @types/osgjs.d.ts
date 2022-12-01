@@ -164,8 +164,7 @@ declare module OSGJS {
   }
 
   interface attributes {
-    Normal: BufferArray;
-    Vertex: BufferArray;
+    [key:string]: BufferArray;
   }
 
   class NodeVisitor {

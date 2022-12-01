@@ -153,94 +153,117 @@ function parseNodeName(_name: string) {
 }
 
 let meshMap: { [key: string]: Array<{}> } = {};
-let accessors = [], accessorId = 0;
+let accessors = [], accessorId = 0; // accessors[indices,attributes]
 let bufferViews = [], bufferId = 0;
 function decodeMesh(node: OSGJS.Geometry) {
     let { _attributes, _primitives, _cacheVertexAttributeBufferList, _name, stateset } = node;
-    let { Normal, Vertex } = _attributes;
-    // let mesh = { "name": _name, "primitives": primitives };
     let mesh = meshMap[_name];
     if (!mesh) {
         mesh = meshMap[_name] = [];
     }
     let primitive = Object.create({});
 
-    let attributes = [];
-    primitive.attributes = attributes;
     if (_name == "Piston_123-844_0_Parts_1") { debugger }
-    if (_primitives) {
+    if (_primitives) { //primitives
+        let attributes = [];
+        primitive.attributes = attributes;
         if (_primitives.length > 1) { debugger };
-        // _primitives.forEach((primitive) => {
-        //     console.log(primitive);
-        // })
-        let { mode, indices, count, uType, offset, itemSize } = _primitives[0]; // indices ->accessors
-        if (hasAttribute(indices['accessorId'])) {
+        let { mode, indices, uType, count } = _primitives[0];
+        // indices
+        if (isUndefined(indices['accessorId'])) {
             indices['accessorId'] = accessorId++;
-            let { _elements } = indices;
-            if (hasAttribute(_elements['bufferId'])) {
+            let { _elements,_itemSize } = indices;
+            if (isUndefined(_elements['bufferId'])) {
                 _elements['bufferId'] = bufferId++;
                 bufferViews.push(_elements);
             }
+
             accessors.push({
                 id: indices['accessorId'],
                 bufferView: _elements['bufferId'],
-                offset,
+                offset:_elements.byteOffset,
                 componentType: uType,
-                count,
-                // min:0,
-                // max:2011, _elements的数据内容范围
-                type: TYPE_TABLE[itemSize]
+                count:_elements.length/_itemSize,
+                min: getMax(_elements, _itemSize, false),
+                max: getMax(_elements, _itemSize),
+                type: TYPE_TABLE[_itemSize]
             });
+        }
+        //attributes
+        if (_attributes) {
+            for (let key in _attributes) {
+                let attributeName = ATTRIBUTE_TABLE[key];
+                let attr = _attributes[key];
+                if (isUndefined(attr['accessorId'])) {
+                    attr['accessorId'] = accessorId++;
+                    let { _elements,_itemSize,_type } = attr;
+                    if (isUndefined(_elements['bufferId'])) {
+                        _elements['bufferId'] = bufferId++;
+                        bufferViews.push(_elements);
+                    }else{
+                        debugger;
+                    }
+                    accessors.push({
+                        id: attr['accessorId'],
+                        bufferView: _elements['bufferId'],
+                        offset:_elements.byteOffset,
+                        componentType: _type,
+                        count:_elements.length/_itemSize,
+                        min: getMax(_elements, _itemSize, false),
+                        max: getMax(_elements, _itemSize),
+                        type: TYPE_TABLE[_itemSize],
+                    });
+                }
+                attributes.push({
+                    name: attributeName,
+                    id: attr['accessorId']
+                });
+
+            }
+        }
+        // materials
+        if (stateset) {
+            if (typeof stateset['materialId'] == 'undefined') {
+                stateset['materialId'] = materialIdx++;
+                materials.push(stateset);
+            }
+            primitive.material = stateset['materialId'];
         }
         primitive.mode = mode;
         primitive.indices = indices['accessorId'];
 
     }
-    if (stateset) { // materials
-        if (typeof stateset['materialId'] == 'undefined') {
-            stateset['materialId'] = materialIdx++;
-            materials.push(stateset);
-        }
-        primitive.material = stateset['materialId'];
-    }
+
     mesh.push(primitive);
 
+    // arraybuffer
+    // if (_cacheVertexAttributeBufferList) {
+    //     // debugger;
+    //     let num = Object.keys(_cacheVertexAttributeBufferList).length;
+    //     for (let key in _cacheVertexAttributeBufferList) {
+    //         let VertexAttributeBuffer = _cacheVertexAttributeBufferList[key];
+    //         VertexAttributeBuffer.forEach((bufferArray) => {
 
-    if (Normal) { // accessors->NORMAL
-        let {
-            _elements,
-            _normalize,
-            _instanceID,
-            _numItems, // count
-            _type, //componentType
-        } = Normal;
-    }
-    if (Vertex) { // accessors->POSITION
-        let {
-            _elements,
-            _normalize,
-            _instanceID,
-            _numItems, //this._elements.length / this._itemSize;
-            _type, //componentType
-        } = Vertex;
-    }
-
-    if (_cacheVertexAttributeBufferList) {
-        // debugger;
-        let num = Object.keys(_cacheVertexAttributeBufferList).length;
-        for (let key in _cacheVertexAttributeBufferList) {
-            let VertexAttributeBuffer = _cacheVertexAttributeBufferList[key];
-            VertexAttributeBuffer.forEach((bufferArray) => {
-
-            })
-        }
-    }
+    //         })
+    //     }
+    // }
 
 }
 
-function hasAttribute(attr: number): boolean {
+function isUndefined(attr: number): boolean {
     return typeof attr == 'undefined'
 }
+
+function getMax(arr: Float32Array, interval: number, flag: boolean = true) {
+    let source = new Array(interval).fill(flag ? Number.MIN_SAFE_INTEGER : Number.MAX_SAFE_INTEGER);
+    for (let i = 0; i < arr.length; i++) {
+        let item = arr[i];
+        let idx = i % interval;
+        source[idx] = flag ? Math.max(item, source[idx]) : Math.min(item, source[idx]);
+    };
+    return source;
+}
+
 
 function decodeOSGJS(root: OSGJS.Node) {
     decodeScene(root)
@@ -249,3 +272,5 @@ function decodeOSGJS(root: OSGJS.Node) {
         decodeMesh(mesh);
     })
 }
+
+

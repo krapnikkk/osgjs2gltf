@@ -147,80 +147,113 @@ function parseNodeName(_name) {
     }
 }
 var meshMap = {};
-var accessors = [], accessorId = 0;
+var accessors = [], accessorId = 0; // accessors[indices,attributes]
 var bufferViews = [], bufferId = 0;
 function decodeMesh(node) {
     var _attributes = node._attributes, _primitives = node._primitives, _cacheVertexAttributeBufferList = node._cacheVertexAttributeBufferList, _name = node._name, stateset = node.stateset;
-    var Normal = _attributes.Normal, Vertex = _attributes.Vertex;
-    // let mesh = { "name": _name, "primitives": primitives };
     var mesh = meshMap[_name];
     if (!mesh) {
         mesh = meshMap[_name] = [];
     }
     var primitive = Object.create({});
-    var attributes = [];
-    primitive.attributes = attributes;
     if (_name == "Piston_123-844_0_Parts_1") {
         debugger;
     }
-    if (_primitives) {
+    if (_primitives) { //primitives
+        var attributes = [];
+        primitive.attributes = attributes;
         if (_primitives.length > 1) {
             debugger;
         }
         ;
-        // _primitives.forEach((primitive) => {
-        //     console.log(primitive);
-        // })
-        var _a = _primitives[0], mode = _a.mode, indices = _a.indices, count = _a.count, uType = _a.uType, offset = _a.offset, itemSize = _a.itemSize; // indices ->accessors
-        if (hasAttribute(indices['accessorId'])) {
+        var _a = _primitives[0], mode = _a.mode, indices = _a.indices, uType = _a.uType, count = _a.count;
+        // indices
+        if (isUndefined(indices['accessorId'])) {
             indices['accessorId'] = accessorId++;
-            var _elements = indices._elements;
-            if (hasAttribute(_elements['bufferId'])) {
+            var _elements = indices._elements, _itemSize = indices._itemSize;
+            if (isUndefined(_elements['bufferId'])) {
                 _elements['bufferId'] = bufferId++;
                 bufferViews.push(_elements);
             }
             accessors.push({
                 id: indices['accessorId'],
                 bufferView: _elements['bufferId'],
-                offset: offset,
+                offset: _elements.byteOffset,
                 componentType: uType,
-                count: count,
-                // min:0,
-                // max:2011, _elements的数据内容范围
-                type: TYPE_TABLE[itemSize]
+                count: _elements.length / _itemSize,
+                min: getMax(_elements, _itemSize, false),
+                max: getMax(_elements, _itemSize),
+                type: TYPE_TABLE[_itemSize]
             });
+        }
+        //attributes
+        if (_attributes) {
+            for (var key in _attributes) {
+                var attributeName = ATTRIBUTE_TABLE[key];
+                var attr = _attributes[key];
+                if (isUndefined(attr['accessorId'])) {
+                    attr['accessorId'] = accessorId++;
+                    var _elements = attr._elements, _itemSize = attr._itemSize, _type = attr._type;
+                    if (isUndefined(_elements['bufferId'])) {
+                        _elements['bufferId'] = bufferId++;
+                        bufferViews.push(_elements);
+                    }
+                    else {
+                        debugger;
+                    }
+                    accessors.push({
+                        id: attr['accessorId'],
+                        bufferView: _elements['bufferId'],
+                        offset: _elements.byteOffset,
+                        componentType: _type,
+                        count: _elements.length / _itemSize,
+                        min: getMax(_elements, _itemSize, false),
+                        max: getMax(_elements, _itemSize),
+                        type: TYPE_TABLE[_itemSize]
+                    });
+                }
+                attributes.push({
+                    name: attributeName,
+                    id: attr['accessorId']
+                });
+            }
+        }
+        // materials
+        if (stateset) {
+            if (typeof stateset['materialId'] == 'undefined') {
+                stateset['materialId'] = materialIdx++;
+                materials.push(stateset);
+            }
+            primitive.material = stateset['materialId'];
         }
         primitive.mode = mode;
         primitive.indices = indices['accessorId'];
     }
-    if (stateset) { // materials
-        if (typeof stateset['materialId'] == 'undefined') {
-            stateset['materialId'] = materialIdx++;
-            materials.push(stateset);
-        }
-        primitive.material = stateset['materialId'];
-    }
     mesh.push(primitive);
-    if (Normal) { // accessors->NORMAL
-        var _elements = Normal._elements, _normalize = Normal._normalize, _instanceID = Normal._instanceID, _numItems = Normal._numItems, // count
-        _type = Normal._type;
-    }
-    if (Vertex) { // accessors->POSITION
-        var _elements = Vertex._elements, _normalize = Vertex._normalize, _instanceID = Vertex._instanceID, _numItems = Vertex._numItems, //this._elements.length / this._itemSize;
-        _type = Vertex._type;
-    }
-    if (_cacheVertexAttributeBufferList) {
-        // debugger;
-        var num = Object.keys(_cacheVertexAttributeBufferList).length;
-        for (var key in _cacheVertexAttributeBufferList) {
-            var VertexAttributeBuffer = _cacheVertexAttributeBufferList[key];
-            VertexAttributeBuffer.forEach(function (bufferArray) {
-            });
-        }
-    }
+    // arraybuffer
+    // if (_cacheVertexAttributeBufferList) {
+    //     // debugger;
+    //     let num = Object.keys(_cacheVertexAttributeBufferList).length;
+    //     for (let key in _cacheVertexAttributeBufferList) {
+    //         let VertexAttributeBuffer = _cacheVertexAttributeBufferList[key];
+    //         VertexAttributeBuffer.forEach((bufferArray) => {
+    //         })
+    //     }
+    // }
 }
-function hasAttribute(attr) {
+function isUndefined(attr) {
     return typeof attr == 'undefined';
+}
+function getMax(arr, interval, flag) {
+    if (flag === void 0) { flag = true; }
+    var source = new Array(interval).fill(flag ? Number.MIN_SAFE_INTEGER : Number.MAX_SAFE_INTEGER);
+    for (var i = 0; i < arr.length; i++) {
+        var item = arr[i];
+        var idx = i % interval;
+        source[idx] = flag ? Math.max(item, source[idx]) : Math.min(item, source[idx]);
+    }
+    ;
+    return source;
 }
 function decodeOSGJS(root) {
     decodeScene(root);
@@ -229,4 +262,4 @@ function decodeOSGJS(root) {
         decodeMesh(mesh);
     });
 }
-export {};
+// export {};
