@@ -7,6 +7,39 @@ var primitiveSet = {
     "TRIANGLE_STRIP": 5,
     "TRIANGLE_FAN": 6
 };
+var TYPE_TABLE = {
+    1: "SCALAR",
+    2: "VEC2",
+    3: "VEC3",
+    4: "VEC4",
+    5: "MAT2",
+    6: "MAT3",
+    7: "MAT4"
+};
+var ATTRIBUTE_TABLE = {
+    'Vertex': 'POSITION',
+    'Normal': 'NORMAL',
+    'Tangent': 'TANGENT',
+    'TexCoord0': 'TEXCOORD_0',
+    'TexCoord1': 'TEXCOORD_1',
+    'TexCoord2': 'TEXCOORD_2',
+    'TexCoord3': 'TEXCOORD_3',
+    'TexCoord4': 'TEXCOORD_4',
+    'TexCoord5': 'TEXCOORD_5',
+    'TexCoord6': 'TEXCOORD_6',
+    'TexCoord7': 'TEXCOORD_7',
+    'TexCoord8': 'TEXCOORD_8',
+    'TexCoord9': 'TEXCOORD_9',
+    'TexCoord10': 'TEXCOORD_10',
+    'TexCoord11': 'TEXCOORD_11',
+    'TexCoord12': 'TEXCOORD_12',
+    'TexCoord13': 'TEXCOORD_13',
+    'TexCoord14': 'TEXCOORD_14',
+    'TexCoord15': 'TEXCOORD_15',
+    'Color': 'COLOR_0',
+    'Bones': 'JOINTS_0',
+    'Weights': 'WEIGHTS_0'
+};
 var gltf = {
     accessors: [],
     asset: {
@@ -113,18 +146,68 @@ function parseNodeName(_name) {
         return ++nodeId;
     }
 }
+var meshMap = {};
+var accessors = [], accessorId = 0;
+var bufferViews = [], bufferId = 0;
 function decodeMesh(node) {
     var _attributes = node._attributes, _primitives = node._primitives, _cacheVertexAttributeBufferList = node._cacheVertexAttributeBufferList, _name = node._name, stateset = node.stateset;
     var Normal = _attributes.Normal, Vertex = _attributes.Vertex;
-    var mesh = { "name": _name, "primitives": [] };
-    var primitivesNum = 1;
+    // let mesh = { "name": _name, "primitives": primitives };
+    var mesh = meshMap[_name];
+    if (!mesh) {
+        mesh = meshMap[_name] = [];
+    }
+    var primitive = Object.create({});
+    var attributes = [];
+    primitive.attributes = attributes;
+    if (_name == "Piston_123-844_0_Parts_1") {
+        debugger;
+    }
+    if (_primitives) {
+        if (_primitives.length > 1) {
+            debugger;
+        }
+        ;
+        // _primitives.forEach((primitive) => {
+        //     console.log(primitive);
+        // })
+        var _a = _primitives[0], mode = _a.mode, indices = _a.indices, count = _a.count, uType = _a.uType, offset = _a.offset, itemSize = _a.itemSize; // indices ->accessors
+        if (hasAttribute(indices['accessorId'])) {
+            indices['accessorId'] = accessorId++;
+            var _elements = indices._elements;
+            if (hasAttribute(_elements['bufferId'])) {
+                _elements['bufferId'] = bufferId++;
+                bufferViews.push(_elements);
+            }
+            accessors.push({
+                id: indices['accessorId'],
+                bufferView: _elements['bufferId'],
+                offset: offset,
+                componentType: uType,
+                count: count,
+                // min:0,
+                // max:2011, _elements的数据内容范围
+                type: TYPE_TABLE[itemSize]
+            });
+        }
+        primitive.mode = mode;
+        primitive.indices = indices['accessorId'];
+    }
     if (stateset) { // materials
         if (typeof stateset['materialId'] == 'undefined') {
             stateset['materialId'] = materialIdx++;
             materials.push(stateset);
         }
-        else {
-        }
+        primitive.material = stateset['materialId'];
+    }
+    mesh.push(primitive);
+    if (Normal) { // accessors->NORMAL
+        var _elements = Normal._elements, _normalize = Normal._normalize, _instanceID = Normal._instanceID, _numItems = Normal._numItems, // count
+        _type = Normal._type;
+    }
+    if (Vertex) { // accessors->POSITION
+        var _elements = Vertex._elements, _normalize = Vertex._normalize, _instanceID = Vertex._instanceID, _numItems = Vertex._numItems, //this._elements.length / this._itemSize;
+        _type = Vertex._type;
     }
     if (_cacheVertexAttributeBufferList) {
         // debugger;
@@ -135,19 +218,9 @@ function decodeMesh(node) {
             });
         }
     }
-    if (Normal) { // accessors->NORMAL
-        var _elements = Normal._elements, _normalize = Normal._normalize, _instanceID = Normal._instanceID, _numItems = Normal._numItems, // count
-        _type = Normal._type;
-    }
-    if (Vertex) { // accessors->POSITION
-        var _elements = Vertex._elements, _normalize = Vertex._normalize, _instanceID = Vertex._instanceID, _numItems = Vertex._numItems, //this._elements.length / this._itemSize;
-        _type = Vertex._type;
-    }
-    if (_primitives) {
-        _primitives.forEach(function (primitive) {
-            console.log(primitive);
-        });
-    }
+}
+function hasAttribute(attr) {
+    return typeof attr == 'undefined';
 }
 function decodeOSGJS(root) {
     decodeScene(root);

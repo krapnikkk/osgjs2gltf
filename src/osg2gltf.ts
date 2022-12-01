@@ -9,6 +9,41 @@ var primitiveSet = {
     "TRIANGLE_STRIP": 5,
     "TRIANGLE_FAN": 6
 };
+
+var TYPE_TABLE = {
+    1: "SCALAR",
+    2: "VEC2",
+    3: "VEC3",
+    4: "VEC4",
+    5: "MAT2",
+    6: "MAT3",
+    7: "MAT4"
+};
+
+var ATTRIBUTE_TABLE = {
+    'Vertex': 'POSITION',
+    'Normal': 'NORMAL',
+    'Tangent': 'TANGENT',
+    'TexCoord0': 'TEXCOORD_0',
+    'TexCoord1': 'TEXCOORD_1',
+    'TexCoord2': 'TEXCOORD_2',
+    'TexCoord3': 'TEXCOORD_3',
+    'TexCoord4': 'TEXCOORD_4',
+    'TexCoord5': 'TEXCOORD_5',
+    'TexCoord6': 'TEXCOORD_6',
+    'TexCoord7': 'TEXCOORD_7',
+    'TexCoord8': 'TEXCOORD_8',
+    'TexCoord9': 'TEXCOORD_9',
+    'TexCoord10': 'TEXCOORD_10',
+    'TexCoord11': 'TEXCOORD_11',
+    'TexCoord12': 'TEXCOORD_12',
+    'TexCoord13': 'TEXCOORD_13',
+    'TexCoord14': 'TEXCOORD_14',
+    'TexCoord15': 'TEXCOORD_15',
+    'Color': 'COLOR_0',
+    'Bones': 'JOINTS_0',
+    'Weights': 'WEIGHTS_0'
+}
 var gltf: glTF = {
     accessors: [],
     asset: {
@@ -117,29 +152,60 @@ function parseNodeName(_name: string) {
     }
 }
 
+let meshMap: { [key: string]: Array<{}> } = {};
+let accessors = [], accessorId = 0;
+let bufferViews = [], bufferId = 0;
 function decodeMesh(node: OSGJS.Geometry) {
     let { _attributes, _primitives, _cacheVertexAttributeBufferList, _name, stateset } = node;
     let { Normal, Vertex } = _attributes;
-    let mesh = { "name": _name, "primitives": [] };
-    let primitivesNum = 1;
+    // let mesh = { "name": _name, "primitives": primitives };
+    let mesh = meshMap[_name];
+    if (!mesh) {
+        mesh = meshMap[_name] = [];
+    }
+    let primitive = Object.create({});
+
+    let attributes = [];
+    primitive.attributes = attributes;
+    if (_name == "Piston_123-844_0_Parts_1") { debugger }
+    if (_primitives) {
+        if (_primitives.length > 1) { debugger };
+        // _primitives.forEach((primitive) => {
+        //     console.log(primitive);
+        // })
+        let { mode, indices, count, uType, offset, itemSize } = _primitives[0]; // indices ->accessors
+        if (hasAttribute(indices['accessorId'])) {
+            indices['accessorId'] = accessorId++;
+            let { _elements } = indices;
+            if (hasAttribute(_elements['bufferId'])) {
+                _elements['bufferId'] = bufferId++;
+                bufferViews.push(_elements);
+            }
+            accessors.push({
+                id: indices['accessorId'],
+                bufferView: _elements['bufferId'],
+                offset,
+                componentType: uType,
+                count,
+                // min:0,
+                // max:2011, _elements的数据内容范围
+                type: TYPE_TABLE[itemSize]
+            });
+        }
+        primitive.mode = mode;
+        primitive.indices = indices['accessorId'];
+
+    }
     if (stateset) { // materials
         if (typeof stateset['materialId'] == 'undefined') {
             stateset['materialId'] = materialIdx++;
             materials.push(stateset);
-        } else {
-
         }
+        primitive.material = stateset['materialId'];
     }
-    if (_cacheVertexAttributeBufferList) {
-        // debugger;
-        let num = Object.keys(_cacheVertexAttributeBufferList).length;
-        for (let key in _cacheVertexAttributeBufferList) {
-            let VertexAttributeBuffer = _cacheVertexAttributeBufferList[key];
-            VertexAttributeBuffer.forEach((bufferArray) => {
+    mesh.push(primitive);
 
-            })
-        }
-    }
+
     if (Normal) { // accessors->NORMAL
         let {
             _elements,
@@ -158,11 +224,22 @@ function decodeMesh(node: OSGJS.Geometry) {
             _type, //componentType
         } = Vertex;
     }
-    if (_primitives) {
-        _primitives.forEach((primitive) => {
-            console.log(primitive);
-        })
+
+    if (_cacheVertexAttributeBufferList) {
+        // debugger;
+        let num = Object.keys(_cacheVertexAttributeBufferList).length;
+        for (let key in _cacheVertexAttributeBufferList) {
+            let VertexAttributeBuffer = _cacheVertexAttributeBufferList[key];
+            VertexAttributeBuffer.forEach((bufferArray) => {
+
+            })
+        }
     }
+
+}
+
+function hasAttribute(attr: number): boolean {
+    return typeof attr == 'undefined'
 }
 
 function decodeOSGJS(root: OSGJS.Node) {

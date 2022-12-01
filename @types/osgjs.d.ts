@@ -117,6 +117,7 @@ declare module OSGJS {
 
   class DrawElements {
     mode: primitiveSet;
+    itemSize:number;
     count: number;
     offset: number;
     indices: BufferArray;

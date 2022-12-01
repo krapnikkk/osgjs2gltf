@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "ES2015",
+    "module": "ES6",
     "noImplicitAny": false,
     "lib": ["es2015","DOM"],
     "sourceMap": false
