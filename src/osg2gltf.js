@@ -72,7 +72,6 @@ function decodeScene(node) {
         var name = child._name;
         if (name)
             name = child._name.replace("_", "");
-        // gltf.scenes[0].nodes.push(
         scenes.push(+name || 0);
     });
 }
@@ -156,7 +155,6 @@ function decodeMesh(node) {
         mesh = meshMap[_name] = [];
     }
     var primitive = Object.create({});
-    debugger;
     if (_primitives) { //primitives
         var attributes = [];
         primitive.attributes = attributes;
@@ -166,6 +164,7 @@ function decodeMesh(node) {
         ;
         var _a = _primitives[0], mode = _a.mode, indices = _a.indices, uType = _a.uType, count = _a.count;
         // indices
+        window['_log'](indices._instanceID, indices);
         if (isUndefined(indices['accessorId'])) {
             indices['accessorId'] = accessorId++;
             var _elements = indices._elements, _itemSize = indices._itemSize;
@@ -189,6 +188,7 @@ function decodeMesh(node) {
             for (var key in _attributes) {
                 var attributeName = ATTRIBUTE_TABLE[key];
                 var attr = _attributes[key];
+                window['_log'](attr._instanceID, attr);
                 if (isUndefined(attr['accessorId'])) {
                     attr['accessorId'] = accessorId++;
                     var _elements = attr._elements, _itemSize = attr._itemSize, _type = attr._type;
@@ -253,10 +253,11 @@ function getMax(arr, interval, max) {
     ;
     return source;
 }
-export function decodeOSGJS(root) {
+function decodeOSGJS(root) {
     decodeScene(root);
     decodeNode(root.children, scenes);
     meshes.forEach(function (mesh) {
         decodeMesh(mesh);
     });
 }
+export {};

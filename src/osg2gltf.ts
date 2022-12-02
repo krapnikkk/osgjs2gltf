@@ -76,7 +76,6 @@ function decodeScene(node: OSGJS.Node) {
     node.children[0].children.forEach((child) => {
         let name = child._name;
         if (name) name = child._name.replace("_", "")
-        // gltf.scenes[0].nodes.push(
         scenes.push(
             +name || 0
         )
@@ -162,14 +161,13 @@ function decodeMesh(node: OSGJS.Geometry) {
         mesh = meshMap[_name] = [];
     }
     let primitive = Object.create({});
-
-    debugger;
     if (_primitives) { //primitives
         let attributes = [];
         primitive.attributes = attributes;
         if (_primitives.length > 1) { debugger };
         let { mode, indices, uType, count } = _primitives[0];
         // indices
+        window['_log'](indices._instanceID,indices);
         if (isUndefined(indices['accessorId'])) {
             indices['accessorId'] = accessorId++;
             let { _elements,_itemSize } = indices;
@@ -194,6 +192,7 @@ function decodeMesh(node: OSGJS.Geometry) {
             for (let key in _attributes) {
                 let attributeName = ATTRIBUTE_TABLE[key];
                 let attr = _attributes[key];
+                window['_log'](attr._instanceID,attr);
                 if (isUndefined(attr['accessorId'])) {
                     attr['accessorId'] = accessorId++;
                     let { _elements,_itemSize,_type } = attr;
@@ -265,7 +264,7 @@ function getMax(arr: Float32Array, interval: number, max: boolean = true) {
 }
 
 
-export function decodeOSGJS(root: OSGJS.Node) {
+function decodeOSGJS(root: OSGJS.Node) {
     decodeScene(root)
     decodeNode(root.children, scenes)
     meshes.forEach((mesh) => {
