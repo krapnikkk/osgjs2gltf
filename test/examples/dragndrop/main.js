@@ -12,15 +12,33 @@
     Example.prototype = osg.objectInherit(ExampleOSGJS.prototype, {
         run: function () {
             ExampleOSGJS.prototype.run.call(this);
-            Promise.all([readFile('../../../assets/2CylinderEngine0.bin'), readFile('../../../assets/2CylinderEngine0.gltf')])
-                .then((res) => {
-                    let fileList = {
-                        0: res[0],
-                        1: res[1],
-                        length: 2
-                    };
-                    Example.prototype.handleDroppedFiles.call(this,fileList)
-                })
+            Promise.all([
+                readFile('../../../assets/mini_darth_vader/scene.bin'),
+                readFile('../../../assets/mini_darth_vader/scene.gltf'),
+                readFile('../../../assets/mini_darth_vader/beltBuckleFT_baseColor.png'),
+                readFile('../../../assets/mini_darth_vader/beltSides_baseColor.png'),
+                readFile('../../../assets/mini_darth_vader/chestArmor_baseColor.png'),
+                readFile('../../../assets/mini_darth_vader/chestPieceButtons_baseColor.png'),
+                readFile('../../../assets/mini_darth_vader/legs_baseColor.png'),
+                readFile('../../../assets/mini_darth_vader/shldArmor_baseColor.png'),
+                readFile('../../../assets/mini_darth_vader/stepLights_emissive.png'),
+                readFile('../../../assets/mini_darth_vader/torso_baseColor.png')
+            ]).then((res) => {
+                let fileList = {
+                    0: res[0],
+                    1: res[1],
+                    2: res[2],
+                    3: res[3],
+                    4: res[4],
+                    5: res[5],
+                    6: res[6],
+                    7: res[7],
+                    8: res[8],
+                    9: res[9],
+                    length: 10
+                };
+                Example.prototype.handleDroppedFiles.call(this, fileList)
+            })
         },
 
         createScene: function () {
@@ -68,7 +86,7 @@
             // Drag'n drop events
             window.addEventListener('dragover', dragOverEvent.bind(example), false);
             window.addEventListener('drop', dropEvent.bind(example), false);
-            
+
         },
         true
     );
@@ -77,10 +95,11 @@
         return new Promise((resolve, reject) => {
             fetch(url).then(res => res.arrayBuffer())
                 .then(async ab => {
-                    let blob = new Blob([ab],
-                        { type: "application/octet-stream" }
-                    )
                     let fileName = url.split("/").pop();
+                    let ext = fileName.split(".").pop();
+                    let blob = new Blob([ab],
+                        { type: ext == "png" ? "image/png" : "application/octet-stream" }
+                    )
                     let file = await new File([blob], fileName)
                     resolve(file)
                 })

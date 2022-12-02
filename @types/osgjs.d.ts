@@ -3,7 +3,7 @@ declare module OSGJS {
     typeID: number;
     _instanceID: number;
     _userdata: { [key: string]: string };
-    _name: string;
+    _name?: string;
     center?(result: glMatrix.vec3): number;
     className(): string;
     copy<T extends Object>(other: T): void;

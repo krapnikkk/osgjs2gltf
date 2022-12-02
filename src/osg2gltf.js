@@ -67,6 +67,9 @@ var nodes = [], nodeId = 1000;
 var scenes = [];
 var meshId = 0, meshes = [];
 var materials = [], materialIdx = 0;
+var meshMap = {};
+var accessors = [], accessorId = 0; // accessors[indices,attributes]
+var bufferViews = [], bufferId = 0;
 function decodeScene(node) {
     node.children[0].children.forEach(function (child) {
         var name = child._name;
@@ -98,18 +101,22 @@ function decodeNode(rootNodes, names) {
                 var nodeChild = children[j];
                 var id = +parseNodeName(nodeChild._name);
                 var nodeClz = nodeChild.className();
+                if (nodeClz == "Geometry")
+                    debugger;
                 if (typeof nodeChild._name != "undefined" &&
-                    (clz == 'MatrixTransform' || nodeClz == "Geometry") &&
+                    nodeClz == "Geometry" &&
                     (Number.isNaN(id) || id >= nodeId)) {
                     // mesh
                     if (typeof nodeChild['meshId'] == "undefined") {
                         nodeChild['meshId'] = meshId++;
                         nodeChild['name'] = nodeChild._name;
                         node.mesh = meshId;
-                        meshes.push(nodeChild);
                     }
                     else {
                         node.mesh = nodeChild['meshId'];
+                    }
+                    if (meshes.indexOf(nodeChild) == -1) {
+                        meshes.push(nodeChild);
                     }
                 }
                 else {
@@ -145,9 +152,6 @@ function parseNodeName(_name) {
         return ++nodeId;
     }
 }
-var meshMap = {};
-var accessors = [], accessorId = 0; // accessors[indices,attributes]
-var bufferViews = [], bufferId = 0;
 function decodeMesh(node) {
     var _attributes = node._attributes, _primitives = node._primitives, _cacheVertexAttributeBufferList = node._cacheVertexAttributeBufferList, _name = node._name, stateset = node.stateset;
     var mesh = meshMap[_name];
@@ -164,7 +168,7 @@ function decodeMesh(node) {
         ;
         var _a = _primitives[0], mode = _a.mode, indices = _a.indices, uType = _a.uType, count = _a.count;
         // indices
-        window['_log'](indices._instanceID, indices);
+        console.log(indices._instanceID, indices);
         if (isUndefined(indices['accessorId'])) {
             indices['accessorId'] = accessorId++;
             var _elements = indices._elements, _itemSize = indices._itemSize;
@@ -188,7 +192,7 @@ function decodeMesh(node) {
             for (var key in _attributes) {
                 var attributeName = ATTRIBUTE_TABLE[key];
                 var attr = _attributes[key];
-                window['_log'](attr._instanceID, attr);
+                console.log(attr._instanceID, attr);
                 if (isUndefined(attr['accessorId'])) {
                     attr['accessorId'] = accessorId++;
                     var _elements = attr._elements, _itemSize = attr._itemSize, _type = attr._type;

@@ -72,6 +72,11 @@ let nodes = [], nodeId = 1000;
 let scenes = [];
 let meshId = 0, meshes = [];
 let materials = [], materialIdx = 0;
+
+let meshMap: { [key: string]: Array<{}> } = {};
+let accessors = [], accessorId = 0; // accessors[indices,attributes]
+let bufferViews = [], bufferId = 0;
+
 function decodeScene(node: OSGJS.Node) {
     node.children[0].children.forEach((child) => {
         let name = child._name;
@@ -103,17 +108,20 @@ function decodeNode(rootNodes: OSGJS.Node[], names: number[] = []) {
                 let nodeChild = children[j];
                 let id = +parseNodeName(nodeChild._name);
                 let nodeClz = nodeChild.className();
+                if(nodeClz == "Geometry")debugger;
                 if (typeof nodeChild._name != "undefined" &&
-                    (clz == 'MatrixTransform' || nodeClz == "Geometry") &&
+                    nodeClz == "Geometry" &&
                     (Number.isNaN(id) || id >= nodeId)) {
                     // mesh
                     if (typeof nodeChild['meshId'] == "undefined") {
                         nodeChild['meshId'] = meshId++;
                         nodeChild['name'] = nodeChild._name;
                         node.mesh = meshId;
-                        meshes.push(nodeChild);
                     } else {
                         node.mesh = nodeChild['meshId'];
+                    }
+                    if(meshes.indexOf(nodeChild)==-1){
+                        meshes.push(nodeChild);
                     }
                 } else {
                     childIdArr.push(id);
@@ -150,10 +158,6 @@ function parseNodeName(_name: string) {
         return ++nodeId;
     }
 }
-
-let meshMap: { [key: string]: Array<{}> } = {};
-let accessors = [], accessorId = 0; // accessors[indices,attributes]
-let bufferViews = [], bufferId = 0;
 function decodeMesh(node: OSGJS.Geometry) {
     let { _attributes, _primitives, _cacheVertexAttributeBufferList, _name, stateset } = node;
     let mesh = meshMap[_name];
@@ -167,7 +171,7 @@ function decodeMesh(node: OSGJS.Geometry) {
         if (_primitives.length > 1) { debugger };
         let { mode, indices, uType, count } = _primitives[0];
         // indices
-        window['_log'](indices._instanceID,indices);
+        console.log(indices._instanceID,indices);
         if (isUndefined(indices['accessorId'])) {
             indices['accessorId'] = accessorId++;
             let { _elements,_itemSize } = indices;
@@ -192,7 +196,7 @@ function decodeMesh(node: OSGJS.Geometry) {
             for (let key in _attributes) {
                 let attributeName = ATTRIBUTE_TABLE[key];
                 let attr = _attributes[key];
-                window['_log'](attr._instanceID,attr);
+                console.log(attr._instanceID,attr);
                 if (isUndefined(attr['accessorId'])) {
                     attr['accessorId'] = accessorId++;
                     let { _elements,_itemSize,_type } = attr;

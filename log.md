@@ -1,4 +1,4 @@
-#### 2022-12-02
+### 2022-12-02
 由于需要记录的东西太多了，因此还是写下来
 - 进度到目前为止，已经对osgjs文件(v0.2.9)在运行时下的结构进行全解析[see:(@types/osgjs.d.ts)]，并且转换为gltf2.0进度也过半了
 - gltf2.0的格式理解也算是入门了，接下来就是怼工作量，对收集到的数据进行拼接和打包并导出
@@ -33,4 +33,6 @@
 }
 ```
 - 发现个有趣的情况，osgjs转为sketchfab专用渲染引擎后，内部版本号一直为0.2.9，没有改过~
+- 发现个强力好用的vscode插件:[glTF Tools](https://marketplace.visualstudio.com/items?itemName=cesium.gltf-vscode)
 
+### 2022-12-03
