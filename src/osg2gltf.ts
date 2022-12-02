@@ -103,7 +103,7 @@ function decodeNode(rootNodes: OSGJS.Node[], names: number[] = []) {
             for (let j = 0; j < children.length; j++) {
                 let nodeChild = children[j];
                 let id = +parseNodeName(nodeChild._name);
-                let nodeClz = nodeChild.constructor.name;
+                let nodeClz = nodeChild.className();
                 if (typeof nodeChild._name != "undefined" &&
                     (clz == 'MatrixTransform' || nodeClz == "Geometry") &&
                     (Number.isNaN(id) || id >= nodeId)) {
@@ -163,7 +163,7 @@ function decodeMesh(node: OSGJS.Geometry) {
     }
     let primitive = Object.create({});
 
-    if (_name == "Piston_123-844_0_Parts_1") { debugger }
+    debugger;
     if (_primitives) { //primitives
         let attributes = [];
         primitive.attributes = attributes;
@@ -254,23 +254,25 @@ function isUndefined(attr: number): boolean {
     return typeof attr == 'undefined'
 }
 
-function getMax(arr: Float32Array, interval: number, flag: boolean = true) {
-    let source = new Array(interval).fill(flag ? Number.MIN_SAFE_INTEGER : Number.MAX_SAFE_INTEGER);
+function getMax(arr: Float32Array, interval: number, max: boolean = true) {
+    let source = new Array(interval).fill(max ? Number.MIN_SAFE_INTEGER : Number.MAX_SAFE_INTEGER);
     for (let i = 0; i < arr.length; i++) {
         let item = arr[i];
         let idx = i % interval;
-        source[idx] = flag ? Math.max(item, source[idx]) : Math.min(item, source[idx]);
+        source[idx] = max ? Math.max(item, source[idx]) : Math.min(item, source[idx]);
     };
     return source;
 }
 
 
-function decodeOSGJS(root: OSGJS.Node) {
+export function decodeOSGJS(root: OSGJS.Node) {
     decodeScene(root)
     decodeNode(root.children, scenes)
     meshes.forEach((mesh) => {
         decodeMesh(mesh);
     })
 }
+
+
 
 
