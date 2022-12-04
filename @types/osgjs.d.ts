@@ -4,6 +4,7 @@ declare module OSGJS {
     _instanceID: number;
     _userdata: { [key: string]: string };
     _name?: string;
+    _useVAO?:boolean;
     center?(result: glMatrix.vec3): number;
     className(): string;
     copy<T extends Object>(other: T): void;
