@@ -84,6 +84,8 @@ function decodeNode(rootNodes, names) {
         var child = rootNodes[i];
         var clz = child.className();
         var _name = child._name, children = child.children;
+        
+        if(_name == "saberRed_saberRed_0"){debugger}
         if (clz == "Geometry") {
             continue;
         }
@@ -264,4 +266,4 @@ function decodeOSGJS(root) {
         decodeMesh(mesh);
     });
 }
-export {};
+// export {};
