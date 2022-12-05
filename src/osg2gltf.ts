@@ -68,14 +68,14 @@ var gltf: glTF = {
     textures: [],
 };
 
-let nodes = [], nodeId = 1000;
+let nodes = [], nodeId = 0;
 let scenes = [];
 let meshId = 0, meshes = [];
 let materials = [], materialIdx = 0;
 
-let meshMap: { [key: string]: Array<{}> } = {};
 let accessors = [], accessorId = 0; // accessors[indices,attributes]
 let bufferViews = [], bufferId = 0;
+let meshMap: { [key: string]: Array<{}> } = {};
 
 function decodeScene(node: OSGJS.Node) {
     node.children[0].children.forEach((child) => {

@@ -35,6 +35,22 @@ declare module OSG {
         'Bones' |
         'Weights';
 
+    type UserDataValueName =
+        "LambertAmbientColor" |
+        "LambertAmbientFactor" |
+        "LambertBumpFactor" |
+        "LambertDiffuseColor" |
+        "LambertDiffuseFactor" |
+        "LambertEmissiveColor" |
+        "LambertEmissiveFactor" |
+        "LambertTransparencyFactor" |
+        "PhongReflectionFactor" |
+        "PhongShininess" |
+        "PhongSpecularColor" |
+        "PhongSpecularFactor" |
+        "source" |
+        "UniqueID";
+
     interface Root {
         "Generator": string,
         "Version": number,
@@ -72,12 +88,10 @@ declare module OSG {
         "osg.Material"?: OSGMaterial,
     }
 
-    type uType = "Byte" | "Short" | "Int";
+    type DrawElementsType = "DrawElementsUByte" | "DrawElementsUShort" | "DrawElementsUInt";
 
-    interface IPrimitiveSet {
-        // `DrawElementsU${uType}`:IDrawElement;
-        DrawElementsUShort?: IDrawElement
-        // DrawElementsUInt?: IDrawElement
+    type IPrimitiveSet = BaseData & {
+        [key in DrawElementsType]: IDrawElement
     }
 
     interface IVertexAttribute {
@@ -117,15 +131,15 @@ declare module OSG {
     }
 
     interface OSGMatrixTransform extends OSGNode {
+
+    }
+
+    interface OSGMaterial extends BaseData {
         Ambient: number[],
         Diffuse: number[],
         Emission: number[],
         Shininess: number,
-        Specular: number[],
-    }
-
-    interface OSGMaterial extends BaseData {
-
+        Specular: number[]
     }
 
     interface IUserData {
@@ -134,7 +148,7 @@ declare module OSG {
     }
 
     interface IUserDataValue {
-        Name: string,
+        Name: UserDataValueName,
         Value: string
     }
 
