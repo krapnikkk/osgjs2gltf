@@ -13356,6 +13356,10 @@ let nodeMap = {
     "osg.Geometry": [],
 };
 let globalNodes = [], gltfNodes = [], nodeId = 1;
+let globalAccessors = [],accessorId = 0;
+let globalMeshes = [],meshId = 0;
+let globalMaterials = [],materialId = 0;
+let globalIndices = [],indiceId = 0;
 
 function decodeUint8Array(e: Uint8Array): string {
     let i = "";
@@ -13407,10 +13411,13 @@ function decodeOSGNode(nodes: OSG.Node[]) {
 
 }
 
-function generateGltfNode<T extends OSG.Node>(node: T) {
+function generateGltfNode(node: OSG.NodeType) {
     let { Name, type, Children } = node;
     let children = Children ? getNodeChildren(Object.values(Children)) : null;
     let obj = { name: Name };
+    if (!Name) {
+        debugger;
+    }
     if (children) {
         Object.assign(obj, { children });
     }
@@ -13418,10 +13425,13 @@ function generateGltfNode<T extends OSG.Node>(node: T) {
         case OSG.ENode.Node:
             break;
         case OSG.ENode.MatrixTransform:
-            let {Matrix} = node as OSG.MatrixTransform;
-
+            let { Matrix } = node as OSG.MatrixTransform;
+            if (Matrix) {
+                Object.assign(obj, { Matrix });
+            }
             break;
         case OSG.ENode.Geometry:
+
             break;
         default:
             debugger;
@@ -13436,11 +13446,53 @@ function getNodeChildren(nodes: OSG.NodeMap[]): number[] {
     })
 }
 
+function decodeOSGGeometry(nodes: OSG.Geometry[]) {
+    nodes.forEach((node) => {
+        let { PrimitiveSetList, StateSet, UserDataContainer, VertexAttributeList,Name } = node;
+        if(!Name){
+            debugger;
+        }
+        let mesh = {
+            name:Name
+        };
+        if (PrimitiveSetList) {//accessors ->primitives[indices]
+
+        }
+
+        if (VertexAttributeList) { //accessors -> attributes
+
+        }
+
+
+        if (StateSet) { // material
+
+        }
+        
+        globalMeshes.push(mesh);
+    })
+}
+
+function decodeOSGPrimitiveSet(primitiveSetList: OSG.IPrimitiveSet[]) {
+    primitiveSetList.forEach((primitiveSet)=>{
+        for(let key in primitiveSet){
+            let primitive = primitiveSet[key];
+            let {Indices,Mode} = primitive;
+            let {Array,ItemSize,Type} = Indices;
+            if(Array){
+
+            }else{
+                debugger;
+            }
+        }
+    })
+}
+
 function main() {
     // let a = new Uint8Array(8);
     // let osg = decodeFileBinz(a);
     decodeOSGRoot(osg);
-    decodeOSGNode(globalNodes);
+    decodeOSGGeometry(nodeMap['osg.Geometry']);
+    // decodeOSGNode(globalNodes);
     // nodeMap['']
     // decodeOSGNode();
     console.log(gltfNodes);

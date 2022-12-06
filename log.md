@@ -49,3 +49,6 @@
 ### 2022-12-06
 - 一番恶补之后，总算可以为所欲为的从网页中提取想要的数据
 - file.binz中的数据类型总算补全了，目前Version为[9]，Generator为[OpenSceneGraph 3.5.6]，开始苦逼转换重构gltf
+
+### 2022-12-07
+- 再次遇到挑战，需要补习一下TRIANGLE_STRIP->TRIANGLES和DrawArrays和DrawElements之间的转换关系了
