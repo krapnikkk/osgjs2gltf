@@ -71,7 +71,6 @@ declare module OSG {
     interface OSGNode extends BaseData {
         Children: OSGNodeMap[];
         Name?: string,
-        Matrix?: number[],
     }
 
     interface OSGGeometry extends OSGNode {
@@ -131,7 +130,7 @@ declare module OSG {
     }
 
     interface OSGMatrixTransform extends OSGNode {
-
+        Matrix: number[],
     }
 
     interface OSGMaterial extends BaseData {
