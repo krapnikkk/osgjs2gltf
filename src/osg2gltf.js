@@ -1,5 +1,5 @@
-import { glTF } from "../@types/gltf";
-
+"use strict";
+exports.__esModule = true;
 var primitiveSet = {
     "POINTS": 0,
     "LINES": 1,
@@ -9,7 +9,6 @@ var primitiveSet = {
     "TRIANGLE_STRIP": 5,
     "TRIANGLE_FAN": 6
 };
-
 var TYPE_TABLE = {
     1: "SCALAR",
     2: "VEC2",
@@ -19,7 +18,6 @@ var TYPE_TABLE = {
     6: "MAT3",
     7: "MAT4"
 };
-
 var ATTRIBUTE_TABLE = {
     'Vertex': 'POSITION',
     'Normal': 'NORMAL',
@@ -43,12 +41,12 @@ var ATTRIBUTE_TABLE = {
     'Color': 'COLOR_0',
     'Bones': 'JOINTS_0',
     'Weights': 'WEIGHTS_0'
-}
-var gltf: glTF = {
+};
+var gltf = {
     accessors: [],
     asset: {
         generator: "gltf-creator",
-        version: "2.0",
+        version: "2.0"
     },
     buffers: [],
     bufferViews: [],
@@ -65,9 +63,9 @@ var gltf: glTF = {
             "nodes": []
         }
     ],
-    textures: [],
+    textures: []
 };
-let osg: OSG.Root = {
+var osg = {
     "Generator": "OpenSceneGraph 3.5.6",
     "Version": 9,
     "osg.Node": {
@@ -13350,41 +13348,37 @@ let osg: OSG.Root = {
         ]
     }
 };
-let nodeMap = {
+var nodeMap = {
     "osg.Node": [],
     "osg.MatrixTransform": [],
-    "osg.Geometry": [],
+    "osg.Geometry": []
 };
-let globalNodes = [], gltfNodes = [], nodeId = 1;
-
-function decodeUint8Array(e: Uint8Array): string {
-    let i = "";
+var globalNodes = [], gltfNodes = [], nodeId = 1;
+function decodeUint8Array(e) {
+    var i = "";
     for (var n = new Uint8Array(e), r = 0; r < e.length; r += 65535)
-        i += String.fromCharCode.apply(null, n.slice(r, r + 65535))
+        i += String.fromCharCode.apply(null, n.slice(r, r + 65535));
     return i;
 }
-
-function decodeFileBinz(file: Uint8Array): OSG.Root {
-    let txt = decodeUint8Array(file);
+function decodeFileBinz(file) {
+    var txt = decodeUint8Array(file);
     return JSON.parse(txt);
 }
-
-function decodeOSGRoot(root: OSG.Root) {
+function decodeOSGRoot(root) {
     // root as scenes
     gltfNodes.push({
         "children": [
             1
         ],
         "name": "Sketchfab_model"
-    })
-    splitChilren(root["osg.Node"].Children)
+    });
+    splitChilren(root["osg.Node"].Children);
 }
-
-function splitChilren(nodes: OSG.NodeMap[]) {
+function splitChilren(nodes) {
     // let children = node.Children;
-    nodes.forEach((item) => {
-        for (let key in item) {
-            let element = item[key];
+    nodes.forEach(function (item) {
+        for (var key in item) {
+            var element = item[key];
             if (typeof element.nodeId == "undefined") {
                 element.nodeId = nodeId++;
                 element.type = key;
@@ -13397,31 +13391,27 @@ function splitChilren(nodes: OSG.NodeMap[]) {
             }
             nodeMap[key].push(element);
         }
-    })
+    });
 }
-
-function decodeOSGNode(nodes: OSG.Node[]) {
-    nodes.forEach((node) => {
+function decodeOSGNode(nodes) {
+    nodes.forEach(function (node) {
         gltfNodes.push(generateGltfNode(node));
-    })
-
+    });
 }
-
-function generateGltfNode<T extends OSG.Node>(node: T) {
-    let { Name, type, Children } = node;
-    let children = Children ? getNodeChildren(Object.values(Children)) : null;
-    let obj = { name: Name };
+function generateGltfNode(node) {
+    var Name = node.Name, type = node.type, Children = node.Children;
+    var children = Children ? getNodeChildren(Object.values(Children)) : null;
+    var obj = { name: Name };
     if (children) {
-        Object.assign(obj, { children });
+        Object.assign(obj, { children: children });
     }
     switch (type) {
-        case OSG.ENode.Node:
+        case "osg.Node" /* OSG.ENode.Node */:
             break;
-        case OSG.ENode.MatrixTransform:
-            let {Matrix} = node as OSG.MatrixTransform;
-
+        case "osg.MatrixTransform" /* OSG.ENode.MatrixTransform */:
+            var Matrix = node.Matrix;
             break;
-        case OSG.ENode.Geometry:
+        case "osg.Geometry" /* OSG.ENode.Geometry */:
             break;
         default:
             debugger;
@@ -13429,13 +13419,11 @@ function generateGltfNode<T extends OSG.Node>(node: T) {
     }
     return obj;
 }
-
-function getNodeChildren(nodes: OSG.NodeMap[]): number[] {
-    return nodes.map((node) => {
+function getNodeChildren(nodes) {
+    return nodes.map(function (node) {
         return Object.values(node)[0].nodeId;
-    })
+    });
 }
-
 function main() {
     // let a = new Uint8Array(8);
     // let osg = decodeFileBinz(a);
@@ -13446,7 +13434,4 @@ function main() {
     console.log(gltfNodes);
     debugger;
 }
-
 main();
-
-

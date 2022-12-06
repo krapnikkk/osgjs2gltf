@@ -51,89 +51,139 @@ declare module OSG {
         "source" |
         "UniqueID";
 
+    type TypedArray =
+        "Int32Array" |
+        "Uint32Array" |
+        "Uint16Array" |
+        "Uint8Array";
+
+
+    type GeometryDataValueName =
+        "attributes" |
+        "vertex_mode" |
+        "uv_0_bits" |
+        "uv_0_mode" |
+        "epsilon" |
+        "nphi" |
+        "triangle_mode" |
+        "vertex_obits" |
+        "vtx_bbl_x" |
+        "vtx_bbl_y" |
+        "vtx_bbl_z" |
+        "vtx_h_x" |
+        "vtx_h_y" |
+        "vtx_h_z" |
+        "uv_0_bbl_x" |
+        "uv_0_bbl_y" |
+        "uv_0_h_x" |
+        "uv_0_h_y" |
+        "wireframe" |
+        "vertex_bits";
+
+    type AttributeType =
+        "ELEMENT_ARRAY_BUFFER" |
+        "ARRAY_BUFFER";
+
     interface Root {
         "Generator": string,
         "Version": number,
-        "osg.Node": OSGNode
+        "osg.Node": RootNode
     }
 
-    interface OSGNodeMap {
-        "osg.Node"?: OSGNode,
-        "osg.MatrixTransform"?: OSGMatrixTransform,
-        "osg.Geometry"?: OSGGeometry,
+    interface RootNode {
+        Children: NodeMap[];
     }
+
+    export type NodeMap = {
+        // [key in NodeNameType]?:NodeType;
+        [key:string]:NodeType;
+        // "osg.Node"?: NodeType,
+        // "osg.MatrixTransform"?: NodeType,
+        // "osg.Geometry"?: NodeType,
+    }
+
+    export const enum ENode {
+        Node = "osg.Node",
+        MatrixTransform = "osg.MatrixTransform",
+        Geometry = "osg.Geometry"
+    }
+    export type NodeNameType = "osg.Node"|"osg.MatrixTransform"|"osg.Geometry";
+
+    type NodeType = Node | MatrixTransform | Geometry;
 
     interface BaseData {
+        Name?: string,
         UniqueID: number,
         UserDataContainer?: IUserData
     }
 
-    interface OSGNode extends BaseData {
-        Children: OSGNodeMap[];
-        Name?: string,
+    interface Node extends BaseData {
+        nodeId?:number;
+        type?:string;
+        Children?: NodeMap[];
     }
 
-    interface OSGGeometry extends OSGNode {
+    interface Geometry extends Node {
         PrimitiveSetList: IPrimitiveSet[];
         VertexAttributeList: IVertexAttribute;
-        StateSet: IStateSet
+        StateSet?: IStateSet
     }
 
-    interface OSGStateSet extends BaseData {
-        AttributeList: IAttribute[]
+    interface StateSet extends BaseData {
+        AttributeList?: IAttribute[]
     }
 
     interface IAttribute {
-        "osg.Material"?: OSGMaterial,
+        "osg.Material"?: Material,
     }
 
     type DrawElementsType = "DrawElementsUByte" | "DrawElementsUShort" | "DrawElementsUInt";
 
-    type IPrimitiveSet = BaseData & {
-        [key in DrawElementsType]: IDrawElement
+    type IPrimitiveSet = {
+        [key in DrawElementsType]?: IDrawElement
     }
 
-    interface IVertexAttribute {
-        Vertex: IVertex;
+    type IVertexAttribute = {
+        [key in ATTRIBUTE_TYPE]?: VertexAttribute;
     }
-
-    type IVertex = BaseData & {
-        [key in ATTRIBUTE_TYPE]: IArray;
-    };
 
     interface IDrawElement extends BaseData {
-        Indices: {
-            UniqueID: 16,
-            Array: IArray,
-            ItemSize: number,
-            Type: string, // ELEMENT_ARRAY_BUFFER
-        },
+        Indices: IIndices,
         Mode: string,// TRIANGLE_STRIP LINES
     }
 
-    interface IArray {
-        Int32Array?: IByteArray
-        Uint32Array?: IByteArray
-        Uint16Array?: IByteArray
-        Uint8Array?: IByteArray
+    interface IIndices extends BaseData {
+        Array: IArray,
+        ItemSize: number,
+        Type: AttributeType, // ELEMENT_ARRAY_BUFFER
+    }
+
+    interface VertexAttribute extends BaseData {
+        Array?: IArray,
+        ItemSize?: number,
+        Type?: AttributeType, // ELEMENT_ARRAY_BUFFER
+    }
+
+    type IArray = {
+        [key in TypedArray]?: IByteArray
     }
 
     interface IByteArray {
         File: string;// model_file.binz
         Size: number,
         Offset: number,
-        Encoding: string,// varint
+        Encoding?: string,// varint
     }
 
     interface IStateSet {
-        "osg.StateSet": OSGStateSet
+        "osg.StateSet": StateSet
     }
 
-    interface OSGMatrixTransform extends OSGNode {
+    interface MatrixTransform extends Node {
         Matrix: number[],
     }
 
-    interface OSGMaterial extends BaseData {
+    interface Material extends BaseData {
         Ambient: number[],
         Diffuse: number[],
         Emission: number[],
@@ -143,7 +193,7 @@ declare module OSG {
 
     interface IUserData {
         UniqueID: number,
-        Values: IUserDataValue[]
+        Values: IUserDataValue[] | IGeometryDataValue[]
     }
 
     interface IUserDataValue {
@@ -151,4 +201,8 @@ declare module OSG {
         Value: string
     }
 
+    interface IGeometryDataValue {
+        Name: GeometryDataValueName,
+        Value: string
+    }
 }
