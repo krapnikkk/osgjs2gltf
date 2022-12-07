@@ -52,3 +52,6 @@
 
 ### 2022-12-07
 - 再次遇到挑战，需要补习一下TRIANGLE_STRIP->TRIANGLES和DrawArrays和DrawElements之间的转换关系了
+- sketchfab中模型浏览是拥有单独的浏览页，然后作为一个iframe嵌套在页面上的，这样的好处有两个：
+  - 方便嵌套到其他网站上去
+  - iframe作为一个全新的线程，不用担心列表大量的模型影响主站性能[ps.一些不支持使用worker的浏览器其实可以使用iframe充当worker]

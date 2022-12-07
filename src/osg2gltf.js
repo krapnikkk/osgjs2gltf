@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-var primitiveSet = {
+var PRIMITIVE_TABLE = {
     "POINTS": 0,
     "LINES": 1,
     "LINE_LOOP": 2,
@@ -13354,6 +13354,11 @@ var nodeMap = {
     "osg.Geometry": []
 };
 var globalNodes = [], gltfNodes = [], nodeId = 1;
+var globalAccessors = [], accessorId = 0;
+var globalMeshes = [], meshId = 0;
+var globalMaterials = [], materialId = 0;
+var globalIndices = [], indiceId = 0;
+var globalPrimitiveSetList = [], primitiveSetId = 0;
 function decodeUint8Array(e) {
     var i = "";
     for (var n = new Uint8Array(e), r = 0; r < e.length; r += 65535)
@@ -13402,6 +13407,9 @@ function generateGltfNode(node) {
     var Name = node.Name, type = node.type, Children = node.Children;
     var children = Children ? getNodeChildren(Object.values(Children)) : null;
     var obj = { name: Name };
+    if (!Name) {
+        debugger;
+    }
     if (children) {
         Object.assign(obj, { children: children });
     }
@@ -13410,11 +13418,16 @@ function generateGltfNode(node) {
             break;
         case "osg.MatrixTransform" /* OSG.ENode.MatrixTransform */:
             var Matrix = node.Matrix;
+            if (Matrix) {
+                Object.assign(obj, { Matrix: Matrix });
+            }
             break;
         case "osg.Geometry" /* OSG.ENode.Geometry */:
+            Object.assign(obj, { mesh: meshId++ });
+            decodeOSGGeometry(node);
             break;
         default:
-            debugger;
+            // debugger;
             break;
     }
     return obj;
@@ -13423,6 +13436,63 @@ function getNodeChildren(nodes) {
     return nodes.map(function (node) {
         return Object.values(node)[0].nodeId;
     });
+}
+function decodeOSGGeometry(node) {
+    var PrimitiveSetList = node.PrimitiveSetList, StateSet = node.StateSet, UserDataContainer = node.UserDataContainer, VertexAttributeList = node.VertexAttributeList, Name = node.Name;
+    if (!Name) {
+        debugger;
+    }
+    var primitives = [];
+    var mesh = {
+        name: Name,
+        primitives: primitives
+    };
+    var primitive = Object.create({});
+    primitives.push(primitive);
+    if (PrimitiveSetList) { //accessors ->primitives[indices]
+        var primitiveArr = decodeOSGPrimitiveSet(PrimitiveSetList);
+        Object.assign(primitive, primitiveArr[0]);
+        if (primitiveArr.length > 1) {
+            debugger;
+        }
+        ;
+    }
+    if (VertexAttributeList) { //accessors -> attributes
+        primitive.attributes = decodeOSGVertexAttribute(VertexAttributeList);
+    }
+    if (StateSet) { // material
+    }
+    globalMeshes.push(mesh);
+}
+function decodeOSGPrimitiveSet(primitiveSetList) {
+    return primitiveSetList.map(function (primitiveSet) {
+        var primitives = [];
+        for (var key in primitiveSet) {
+            var primitive = primitiveSet[key];
+            // globalPrimitiveSetList.push(primitive);
+            var gltfPrimitive = {};
+            var Indices = primitive.Indices, Mode = primitive.Mode;
+            var mode = PRIMITIVE_TABLE[Mode];
+            Object.assign(gltfPrimitive, { mode: mode, Indices: Indices });
+            primitives.push(gltfPrimitive);
+            // let { Array, ItemSize, Type } = Indices;
+            // if (Array) {
+            // } else {
+            //     debugger;
+            // }
+        }
+        return primitives;
+    });
+}
+function decodeOSGVertexAttribute(vertextAttribute) {
+    var attributes = {};
+    for (var key in vertextAttribute) {
+        var attribute = vertextAttribute[key];
+        // let { Array,ItemSize,Type} = attribute;
+        var type = ATTRIBUTE_TABLE[key];
+        attributes[type] = attribute;
+    }
+    return attributes;
 }
 function main() {
     // let a = new Uint8Array(8);

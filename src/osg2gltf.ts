@@ -1,6 +1,6 @@
 import { glTF } from "../@types/gltf";
 
-var primitiveSet = {
+var PRIMITIVE_TABLE = {
     "POINTS": 0,
     "LINES": 1,
     "LINE_LOOP": 2,
@@ -13356,10 +13356,11 @@ let nodeMap = {
     "osg.Geometry": [],
 };
 let globalNodes = [], gltfNodes = [], nodeId = 1;
-let globalAccessors = [],accessorId = 0;
-let globalMeshes = [],meshId = 0;
-let globalMaterials = [],materialId = 0;
-let globalIndices = [],indiceId = 0;
+let globalAccessors = [], accessorId = 0;
+let globalMeshes = [], meshId = 0;
+let globalMaterials = [], materialId = 0;
+let globalIndices = [], indiceId = 0;
+let globalPrimitiveSetList = [], primitiveSetId = 0;
 
 function decodeUint8Array(e: Uint8Array): string {
     let i = "";
@@ -13388,7 +13389,7 @@ function splitChilren(nodes: OSG.NodeMap[]) {
     // let children = node.Children;
     nodes.forEach((item) => {
         for (let key in item) {
-            let element = item[key];
+            let element = item[<OSG.NodeNameType>key];
             if (typeof element.nodeId == "undefined") {
                 element.nodeId = nodeId++;
                 element.type = key;
@@ -13431,7 +13432,8 @@ function generateGltfNode(node: OSG.NodeType) {
             }
             break;
         case OSG.ENode.Geometry:
-
+            Object.assign(obj, { mesh:meshId++ });
+            decodeOSGGeometry(node as OSG.Geometry);
             break;
         default:
             debugger;
@@ -13446,53 +13448,76 @@ function getNodeChildren(nodes: OSG.NodeMap[]): number[] {
     })
 }
 
-function decodeOSGGeometry(nodes: OSG.Geometry[]) {
-    nodes.forEach((node) => {
-        let { PrimitiveSetList, StateSet, UserDataContainer, VertexAttributeList,Name } = node;
-        if(!Name){
-            debugger;
-        }
-        let mesh = {
-            name:Name
-        };
-        if (PrimitiveSetList) {//accessors ->primitives[indices]
+function decodeOSGGeometry(node: OSG.Geometry) {
+    let { PrimitiveSetList, StateSet, UserDataContainer, VertexAttributeList, Name } = node;
+    if (!Name) {
+        debugger;
+    }
+    let primitives = [];
+    let mesh = {
+        name: Name,
+        primitives
+    };
+    let primitive = Object.create({});
+    primitives.push(primitive)
+    if (PrimitiveSetList) {//accessors ->primitives[indices]
+        let primitiveArr = decodeOSGPrimitiveSet(PrimitiveSetList);
+        Object.assign(primitive,primitiveArr[0])
+        if(primitiveArr.length>1){debugger};
+    }
 
-        }
-
-        if (VertexAttributeList) { //accessors -> attributes
-
-        }
+    if (VertexAttributeList) { //accessors -> attributes
+        primitive.attributes = decodeOSGVertexAttribute(VertexAttributeList);
+    }
 
 
-        if (StateSet) { // material
+    if (StateSet) { // material
 
-        }
-        
-        globalMeshes.push(mesh);
-    })
+    }
+
+    globalMeshes.push(mesh);
 }
 
 function decodeOSGPrimitiveSet(primitiveSetList: OSG.IPrimitiveSet[]) {
-    primitiveSetList.forEach((primitiveSet)=>{
-        for(let key in primitiveSet){
-            let primitive = primitiveSet[key];
-            let {Indices,Mode} = primitive;
-            let {Array,ItemSize,Type} = Indices;
-            if(Array){
+    return primitiveSetList.map((primitiveSet) => {
+        let primitives = [];
+        for (let key in primitiveSet) {
+            let primitive = primitiveSet[<OSG.DrawElementsType>key];
+            // globalPrimitiveSetList.push(primitive);
+            let gltfPrimitive = {
 
-            }else{
-                debugger;
             }
+            let { Indices, Mode } = primitive;
+            let mode = PRIMITIVE_TABLE[Mode];
+            Object.assign(gltfPrimitive, { mode, Indices });
+            primitives.push(gltfPrimitive);
+            // let { Array, ItemSize, Type } = Indices;
+            // if (Array) {
+
+            // } else {
+            //     debugger;
+            // }
         }
+        return primitives;
     })
+}
+
+function decodeOSGVertexAttribute(vertextAttribute: OSG.IVertexAttribute) {
+    let attributes = {};
+    for (let key in vertextAttribute) {
+        let attribute = vertextAttribute[<OSG.ATTRIBUTE_TYPE>key];
+        // let { Array,ItemSize,Type} = attribute;
+        let type = ATTRIBUTE_TABLE[key];
+        attributes[type] = attribute;
+    }
+    return attributes;
 }
 
 function main() {
     // let a = new Uint8Array(8);
     // let osg = decodeFileBinz(a);
     decodeOSGRoot(osg);
-    decodeOSGGeometry(nodeMap['osg.Geometry']);
-    // decodeOSGNode(globalNodes);
+    decodeOSGNode(globalNodes);
     // nodeMap['']
     // decodeOSGNode();
     console.log(gltfNodes);
