@@ -13380,21 +13380,35 @@ function decodeOSGRoot(root) {
     splitChilren(root["osg.Node"].Children);
 }
 function splitChilren(nodes) {
-    // let children = node.Children;
     nodes.forEach(function (item) {
         for (var key in item) {
             var element = item[key];
-            if (typeof element.nodeId == "undefined") {
+            var elementStr = JSON.stringify(element);
+            var hasWireframe = key == "osg.Geometry" && elementStr.indexOf("model_file_wireframe") == -1;
+            if (hasWireframe)
+                continue;
+            var isWireframeNode = false;
+            var child = element.Children && element.Children[0] && element.Children[0]["osg.Node"];
+            if (child) {
+                if (child.Name == element.Name) {
+                    isWireframeNode = true;
+                }
+            }
+            if (typeof element.nodeId == "undefined" && !isWireframeNode) {
                 element.nodeId = nodeId++;
                 element.type = key;
             }
-            if (globalNodes.indexOf(element) == -1) {
-                globalNodes.push(element);
+            // let uElement = Object.assign({},element);
+            // delete uElement.Children;
+            // delete uElement.UniqueID;
+            // delete uElement.UserDataContainer;
+            if (globalNodes.indexOf(element) == -1 && !isWireframeNode) {
+                globalNodes.push(elementStr);
             }
             if (element.Children) {
                 splitChilren(element.Children);
             }
-            nodeMap[key].push(element);
+            // nodeMap[key].push(element);
         }
     });
 }
@@ -13427,7 +13441,7 @@ function generateGltfNode(node) {
             decodeOSGGeometry(node);
             break;
         default:
-            // debugger;
+            debugger;
             break;
     }
     return obj;
@@ -13498,10 +13512,10 @@ function main() {
     // let a = new Uint8Array(8);
     // let osg = decodeFileBinz(a);
     decodeOSGRoot(osg);
-    decodeOSGNode(globalNodes);
+    // decodeOSGNode(globalNodes);
     // nodeMap['']
     // decodeOSGNode();
-    console.log(gltfNodes);
+    console.log(globalNodes);
     debugger;
 }
 main();

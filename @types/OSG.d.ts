@@ -36,6 +36,17 @@ declare module OSG {
         'Weights';
 
     type UserDataValueName =
+        "DiffuseColor"|
+        "DiffuseFactor"|
+        "EmissiveColor"|
+        "EmissiveFactor"|
+        "MetallicFactor"|
+        "OpacityFactor"|
+        "RoughnessFactor"|
+        "alphaCutoff"|
+        "alphaMode"|
+        "doubleSided"|
+        "sDiffuse"|
         "LambertAmbientColor" |
         "LambertAmbientFactor" |
         "LambertBumpFactor" |
@@ -49,6 +60,8 @@ declare module OSG {
         "PhongSpecularColor" |
         "PhongSpecularFactor" |
         "source" |
+        "version"|
+        "authoring_tool" |
         "UniqueID";
 
     type TypedArray =
@@ -60,9 +73,15 @@ declare module OSG {
 
     type GeometryDataValueName =
         "attributes" |
+        "tangent" |
+        "version"|
         "vertex_mode" |
         "uv_0_bits" |
         "uv_0_mode" |
+        "uv_1_bits" |
+        "uv_1_mode" |
+        "uv_2_bits" |
+        "uv_2_mode" |
         "epsilon" |
         "nphi" |
         "triangle_mode" |
@@ -75,8 +94,14 @@ declare module OSG {
         "vtx_h_z" |
         "uv_0_bbl_x" |
         "uv_0_bbl_y" |
+        "uv_1_bbl_x" |
+        "uv_1_bbl_y" |
+        "uv_2_bbl_x" |
+        "uv_2_bbl_y" |
         "uv_0_h_x" |
         "uv_0_h_y" |
+        "uv_1_h_x" |
+        "uv_1_h_y" |
         "wireframe" |
         "vertex_bits";
 
@@ -96,7 +121,7 @@ declare module OSG {
 
     export type NodeMap = {
         // [key in NodeNameType]?:NodeType;
-        [key:string]:NodeType;
+        [key: string]: NodeType;
         // "osg.Node"?: NodeType,
         // "osg.MatrixTransform"?: NodeType,
         // "osg.Geometry"?: NodeType,
@@ -107,7 +132,7 @@ declare module OSG {
         MatrixTransform = "osg.MatrixTransform",
         Geometry = "osg.Geometry"
     }
-    export type NodeNameType = "osg.Node"|"osg.MatrixTransform"|"osg.Geometry";
+    export type NodeNameType = "osg.Node" | "osg.MatrixTransform" | "osg.Geometry";
 
     type NodeType = Node | MatrixTransform | Geometry;
 
@@ -118,8 +143,8 @@ declare module OSG {
     }
 
     interface Node extends BaseData {
-        nodeId?:number;
-        type?:string;
+        nodeId?: number;
+        type?: string;
         Children?: NodeMap[];
     }
 
@@ -131,6 +156,7 @@ declare module OSG {
 
     interface StateSet extends BaseData {
         AttributeList?: IAttribute[]
+        TextureAttributeList?:any[]; // todo
     }
 
     interface IAttribute {

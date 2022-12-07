@@ -13386,21 +13386,34 @@ function decodeOSGRoot(root: OSG.Root) {
 }
 
 function splitChilren(nodes: OSG.NodeMap[]) {
-    // let children = node.Children;
     nodes.forEach((item) => {
         for (let key in item) {
             let element = item[<OSG.NodeNameType>key];
-            if (typeof element.nodeId == "undefined") {
+            let elementStr = JSON.stringify(element);
+            let hasWireframe = key == "osg.Geometry" && elementStr.indexOf("model_file_wireframe") == -1;
+            if (hasWireframe) continue;
+            let isWireframeNode = false;
+            let child = element.Children && element.Children[0] && element.Children[0]["osg.Node"];
+            if (child) {
+                if (child.Name == element.Name) {
+                    isWireframeNode = true;
+                }
+            }
+            if (typeof element.nodeId == "undefined" && !isWireframeNode) {
                 element.nodeId = nodeId++;
                 element.type = key;
             }
-            if (globalNodes.indexOf(element) == -1) {
-                globalNodes.push(element);
+            // let uElement = Object.assign({},element);
+            // delete uElement.Children;
+            // delete uElement.UniqueID;
+            // delete uElement.UserDataContainer;
+            if (globalNodes.indexOf(element) == -1 && !isWireframeNode) {
+                globalNodes.push(elementStr);
             }
             if (element.Children) {
                 splitChilren(element.Children);
             }
-            nodeMap[key].push(element);
+            // nodeMap[key].push(element);
         }
     })
 }
@@ -13432,7 +13445,7 @@ function generateGltfNode(node: OSG.NodeType) {
             }
             break;
         case OSG.ENode.Geometry:
-            Object.assign(obj, { mesh:meshId++ });
+            Object.assign(obj, { mesh: meshId++ });
             decodeOSGGeometry(node as OSG.Geometry);
             break;
         default:
@@ -13462,8 +13475,8 @@ function decodeOSGGeometry(node: OSG.Geometry) {
     primitives.push(primitive)
     if (PrimitiveSetList) {//accessors ->primitives[indices]
         let primitiveArr = decodeOSGPrimitiveSet(PrimitiveSetList);
-        Object.assign(primitive,primitiveArr[0])
-        if(primitiveArr.length>1){debugger};
+        Object.assign(primitive, primitiveArr[0])
+        if (primitiveArr.length > 1) { debugger };
     }
 
     if (VertexAttributeList) { //accessors -> attributes
@@ -13517,10 +13530,10 @@ function main() {
     // let a = new Uint8Array(8);
     // let osg = decodeFileBinz(a);
     decodeOSGRoot(osg);
-    decodeOSGNode(globalNodes);
+    // decodeOSGNode(globalNodes);
     // nodeMap['']
     // decodeOSGNode();
-    console.log(gltfNodes);
+    console.log(globalNodes);
     debugger;
 }
 
