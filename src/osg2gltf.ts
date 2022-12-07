@@ -13390,7 +13390,7 @@ function splitChilren(nodes: OSG.NodeMap[]) {
         for (let key in item) {
             let element = item[<OSG.NodeNameType>key];
             let elementStr = JSON.stringify(element);
-            let hasWireframe = key == "osg.Geometry" && elementStr.indexOf("model_file_wireframe") == -1;
+            let hasWireframe = key == "osg.Geometry" && elementStr.indexOf("model_file_wireframe") !== -1;
             if (hasWireframe) continue;
             let isWireframeNode = false;
             let child = element.Children && element.Children[0] && element.Children[0]["osg.Node"];
@@ -13403,17 +13403,14 @@ function splitChilren(nodes: OSG.NodeMap[]) {
                 element.nodeId = nodeId++;
                 element.type = key;
             }
-            // let uElement = Object.assign({},element);
-            // delete uElement.Children;
-            // delete uElement.UniqueID;
-            // delete uElement.UserDataContainer;
+
             if (globalNodes.indexOf(element) == -1 && !isWireframeNode) {
-                globalNodes.push(elementStr);
+                globalNodes.push(element);
+                nodeMap[key].push(element);
             }
             if (element.Children) {
                 splitChilren(element.Children);
             }
-            // nodeMap[key].push(element);
         }
     })
 }
@@ -13422,7 +13419,6 @@ function decodeOSGNode(nodes: OSG.Node[]) {
     nodes.forEach((node) => {
         gltfNodes.push(generateGltfNode(node));
     })
-
 }
 
 function generateGltfNode(node: OSG.NodeType) {
@@ -13446,7 +13442,7 @@ function generateGltfNode(node: OSG.NodeType) {
             break;
         case OSG.ENode.Geometry:
             Object.assign(obj, { mesh: meshId++ });
-            decodeOSGGeometry(node as OSG.Geometry);
+            node['meshId'] = meshId;
             break;
         default:
             debugger;
@@ -13455,13 +13451,24 @@ function generateGltfNode(node: OSG.NodeType) {
     return obj;
 }
 
-function getNodeChildren(nodes: OSG.NodeMap[]): number[] {
-    return nodes.map((node) => {
-        return Object.values(node)[0].nodeId;
+function decodeOSGGeometries(nodes:OSG.Geometry[]) {
+    nodes.forEach((node) => {
+        generateGltfMesh(node);
     })
 }
 
-function decodeOSGGeometry(node: OSG.Geometry) {
+function getNodeChildren(nodes: OSG.NodeMap[]): number[] {
+    let ids = [];
+    nodes.forEach((node) => {
+        let id =  Object.values(node)[0].nodeId;
+        if(typeof id != "undefined"){
+            ids.push(id);
+        }
+    });
+    return ids;
+}
+
+function generateGltfMesh(node: OSG.Geometry) {
     let { PrimitiveSetList, StateSet, UserDataContainer, VertexAttributeList, Name } = node;
     if (!Name) {
         debugger;
@@ -13472,7 +13479,7 @@ function decodeOSGGeometry(node: OSG.Geometry) {
         primitives
     };
     let primitive = Object.create({});
-    primitives.push(primitive)
+    primitives.push(primitive);
     if (PrimitiveSetList) {//accessors ->primitives[indices]
         let primitiveArr = decodeOSGPrimitiveSet(PrimitiveSetList);
         Object.assign(primitive, primitiveArr[0])
@@ -13492,8 +13499,8 @@ function decodeOSGGeometry(node: OSG.Geometry) {
 }
 
 function decodeOSGPrimitiveSet(primitiveSetList: OSG.IPrimitiveSet[]) {
-    return primitiveSetList.map((primitiveSet) => {
-        let primitives = [];
+    let primitives = [];
+    primitiveSetList.forEach((primitiveSet) => {
         for (let key in primitiveSet) {
             let primitive = primitiveSet[<OSG.DrawElementsType>key];
             // globalPrimitiveSetList.push(primitive);
@@ -13511,8 +13518,8 @@ function decodeOSGPrimitiveSet(primitiveSetList: OSG.IPrimitiveSet[]) {
             //     debugger;
             // }
         }
-        return primitives;
     })
+    return primitives;
 }
 
 function decodeOSGVertexAttribute(vertextAttribute: OSG.IVertexAttribute) {
@@ -13530,10 +13537,12 @@ function main() {
     // let a = new Uint8Array(8);
     // let osg = decodeFileBinz(a);
     decodeOSGRoot(osg);
-    // decodeOSGNode(globalNodes);
+    decodeOSGNode(globalNodes);
+    decodeOSGGeometries(nodeMap['osg.Geometry']);
     // nodeMap['']
     // decodeOSGNode();
-    console.log(globalNodes);
+    console.log(gltfNodes);
+    console.log(globalMeshes);
     debugger;
 }
 

@@ -13384,7 +13384,7 @@ function splitChilren(nodes) {
         for (var key in item) {
             var element = item[key];
             var elementStr = JSON.stringify(element);
-            var hasWireframe = key == "osg.Geometry" && elementStr.indexOf("model_file_wireframe") == -1;
+            var hasWireframe = key == "osg.Geometry" && elementStr.indexOf("model_file_wireframe") !== -1;
             if (hasWireframe)
                 continue;
             var isWireframeNode = false;
@@ -13398,17 +13398,13 @@ function splitChilren(nodes) {
                 element.nodeId = nodeId++;
                 element.type = key;
             }
-            // let uElement = Object.assign({},element);
-            // delete uElement.Children;
-            // delete uElement.UniqueID;
-            // delete uElement.UserDataContainer;
             if (globalNodes.indexOf(element) == -1 && !isWireframeNode) {
-                globalNodes.push(elementStr);
+                globalNodes.push(element);
+                nodeMap[key].push(element);
             }
             if (element.Children) {
                 splitChilren(element.Children);
             }
-            // nodeMap[key].push(element);
         }
     });
 }
@@ -13438,7 +13434,7 @@ function generateGltfNode(node) {
             break;
         case "osg.Geometry" /* OSG.ENode.Geometry */:
             Object.assign(obj, { mesh: meshId++ });
-            decodeOSGGeometry(node);
+            node['meshId'] = meshId;
             break;
         default:
             debugger;
@@ -13446,12 +13442,22 @@ function generateGltfNode(node) {
     }
     return obj;
 }
-function getNodeChildren(nodes) {
-    return nodes.map(function (node) {
-        return Object.values(node)[0].nodeId;
+function decodeOSGGeometries(nodes) {
+    nodes.forEach(function (node) {
+        generateGltfMesh(node);
     });
 }
-function decodeOSGGeometry(node) {
+function getNodeChildren(nodes) {
+    var ids = [];
+    nodes.forEach(function (node) {
+        var id = Object.values(node)[0].nodeId;
+        if (typeof id != "undefined") {
+            ids.push(id);
+        }
+    });
+    return ids;
+}
+function generateGltfMesh(node) {
     var PrimitiveSetList = node.PrimitiveSetList, StateSet = node.StateSet, UserDataContainer = node.UserDataContainer, VertexAttributeList = node.VertexAttributeList, Name = node.Name;
     if (!Name) {
         debugger;
@@ -13479,8 +13485,8 @@ function decodeOSGGeometry(node) {
     globalMeshes.push(mesh);
 }
 function decodeOSGPrimitiveSet(primitiveSetList) {
-    return primitiveSetList.map(function (primitiveSet) {
-        var primitives = [];
+    var primitives = [];
+    primitiveSetList.forEach(function (primitiveSet) {
         for (var key in primitiveSet) {
             var primitive = primitiveSet[key];
             // globalPrimitiveSetList.push(primitive);
@@ -13495,8 +13501,8 @@ function decodeOSGPrimitiveSet(primitiveSetList) {
             //     debugger;
             // }
         }
-        return primitives;
     });
+    return primitives;
 }
 function decodeOSGVertexAttribute(vertextAttribute) {
     var attributes = {};
@@ -13512,10 +13518,12 @@ function main() {
     // let a = new Uint8Array(8);
     // let osg = decodeFileBinz(a);
     decodeOSGRoot(osg);
-    // decodeOSGNode(globalNodes);
+    decodeOSGNode(globalNodes);
+    decodeOSGGeometries(nodeMap['osg.Geometry']);
     // nodeMap['']
     // decodeOSGNode();
-    console.log(globalNodes);
+    console.log(gltfNodes);
+    console.log(globalMeshes);
     debugger;
 }
 main();
