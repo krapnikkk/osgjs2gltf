@@ -1,5 +1,5 @@
 import { glTF } from "../@types/gltf";
-
+declare var _root_:OSGJS.Node;
 var PRIMITIVE_TABLE = {
     "POINTS": 0,
     "LINES": 1,
@@ -13504,6 +13504,7 @@ function decodeOSGStateSet(stateSet: OSG.StateSet) {
         AttributeList.forEach((attribute) => {
             let material = attribute['osg.Material'];
             let { Name, Ambient, } = material;
+            let state = findMaterialFromRoot(Name,_root_);
         })
     }
     if (TextureAttributeList) {
