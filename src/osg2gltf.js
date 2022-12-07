@@ -13484,6 +13484,44 @@ function generateGltfMesh(node) {
     }
     globalMeshes.push(mesh);
 }
+function decodeOSGStateSet(stateSet) {
+    var AttributeList = stateSet.AttributeList, TextureAttributeList = stateSet.TextureAttributeList;
+    if (AttributeList) {
+        AttributeList.forEach(function (attribute) {
+            var material = attribute['osg.Material'];
+            var Name = material.Name, Ambient = material.Ambient;
+        });
+    }
+    if (TextureAttributeList) {
+        debugger;
+    }
+}
+function findMaterialFromRoot(name, node) {
+    var children = node.children;
+    var stateSet;
+    for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        stateSet = getMaterialFromOSGJS(name, child);
+        if (stateSet) {
+            break;
+        }
+        else {
+            stateSet = findMaterialFromRoot(name, child);
+        }
+    }
+    return stateSet;
+}
+function getMaterialFromOSGJS(name, node) {
+    var res;
+    var stateset = node.stateset;
+    if (stateset) {
+        var _name = stateset._name;
+        if (_name == name && node._name == name) { // todo maybe find all
+            res = stateset;
+        }
+    }
+    return res;
+}
 function decodeOSGPrimitiveSet(primitiveSetList) {
     var primitives = [];
     primitiveSetList.forEach(function (primitiveSet) {

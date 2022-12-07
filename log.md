@@ -55,3 +55,7 @@
 - sketchfab中模型浏览是拥有单独的浏览页，然后作为一个iframe嵌套在页面上的，这样的好处有两个：
   - 方便嵌套到其他网站上去
   - iframe作为一个全新的线程，不用担心列表大量的模型影响主站性能[ps.一些不支持使用worker的浏览器其实可以使用iframe充当worker]
+- sketchfab的模型是带有Wireframe数据的,一个geometry节点下有两种mesh，分别是正常的和Wireframe的，暂时推测是因为在inspector是可以看到切换模型Wireframe模式。然后webgl没有geometry shader所以需要额外处理数据，有空的时候实现一下Wireframe[flag+1]
+
+### 2022-12-08
+- 终于搞到重构material这块内容了，然后就是PBR需要恶补知识点了，估计进度会慢上很多

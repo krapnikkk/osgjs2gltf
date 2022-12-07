@@ -13451,7 +13451,7 @@ function generateGltfNode(node: OSG.NodeType) {
     return obj;
 }
 
-function decodeOSGGeometries(nodes:OSG.Geometry[]) {
+function decodeOSGGeometries(nodes: OSG.Geometry[]) {
     nodes.forEach((node) => {
         generateGltfMesh(node);
     })
@@ -13460,8 +13460,8 @@ function decodeOSGGeometries(nodes:OSG.Geometry[]) {
 function getNodeChildren(nodes: OSG.NodeMap[]): number[] {
     let ids = [];
     nodes.forEach((node) => {
-        let id =  Object.values(node)[0].nodeId;
-        if(typeof id != "undefined"){
+        let id = Object.values(node)[0].nodeId;
+        if (typeof id != "undefined") {
             ids.push(id);
         }
     });
@@ -13496,6 +13496,47 @@ function generateGltfMesh(node: OSG.Geometry) {
     }
 
     globalMeshes.push(mesh);
+}
+
+function decodeOSGStateSet(stateSet: OSG.StateSet) {
+    let { AttributeList, TextureAttributeList } = stateSet;
+    if (AttributeList) {
+        AttributeList.forEach((attribute) => {
+            let material = attribute['osg.Material'];
+            let { Name, Ambient, } = material;
+        })
+    }
+    if (TextureAttributeList) {
+        debugger;
+    }
+}
+
+function findMaterialFromRoot(name: string, node: OSGJS.Node): OSGJS.StateSet {
+    let { children } = node;
+    let stateSet: OSGJS.StateSet;
+    for (let i = 0; i < children.length; i++) {
+        let child = children[i];
+        stateSet = getMaterialFromOSGJS(name, child);
+        if (stateSet) {
+            break;
+        } else {
+            stateSet = findMaterialFromRoot(name, child);
+        }
+    }
+    return stateSet;
+}
+
+function getMaterialFromOSGJS(name: string, node: OSGJS.Node): OSGJS.StateSet {
+    let res: OSGJS.StateSet;
+    let { stateset } = node;
+    if (stateset) {
+        let { _name } = stateset;
+        if (_name == name && node._name == name) { // todo maybe find all
+            res = stateset;
+        }
+    }
+    return res;
+
 }
 
 function decodeOSGPrimitiveSet(primitiveSetList: OSG.IPrimitiveSet[]) {

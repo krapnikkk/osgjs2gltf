@@ -160,7 +160,7 @@ declare module OSG {
     }
 
     interface IAttribute {
-        "osg.Material"?: Material,
+        "osg.Material": Material,
     }
 
     type DrawElementsType = "DrawElementsUByte" | "DrawElementsUShort" | "DrawElementsUInt";

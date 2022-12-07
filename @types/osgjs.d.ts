@@ -4,6 +4,7 @@ declare module OSGJS {
     _instanceID: number;
     _userdata: { [key: string]: string };
     _name?: string;
+    stateset?: StateSet;
     _useVAO?:boolean;
     center?(result: glMatrix.vec3): number;
     className(): string;
@@ -71,7 +72,6 @@ declare module OSGJS {
   class Geometry extends Node {
     _attributes: attributes;
     _primitives: DrawElements[];
-    stateset: StateSet;
     _cacheVertexAttributeBufferList: { [key: number]: BufferArray[] }
     setVertexAttribArray(key: string, array: BufferArray): void;
     getPrimitives(): DrawElements[];
@@ -82,7 +82,9 @@ declare module OSGJS {
 
   class StateSet extends OSGObject {
     _parents: Node[];
-    _drawID: number;uniforms: { [key: string]: AttributePair };
+    _drawID: number;
+    // uniforms: { [key: string]: AttributePair };
+    _attributeArray:AttributePair[]
   }
 
   class Uniform {
@@ -96,8 +98,20 @@ declare module OSGJS {
   }
 
   class AttributePair {
-    _object: Uniform;
+    _object: Uniform|Attribute;
     _value: string;
+  }
+
+  interface Attribute{
+    _activeChannels:activeChannel[];
+  }
+
+  interface activeChannel{
+    attributes:{
+      color?:Float32Array;
+      name:string;//"AlbedoPBR" | "MetalnessPBR" | "GlossinessPBR" | "EmitColor" | "SpecularF0"
+    },
+    _valueFactor:string;
   }
 
   enum DrawElementsDataFormat {
