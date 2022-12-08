@@ -13602,8 +13602,11 @@ function decodeOSGVertexAttribute(vertextAttribute) {
     }
     return attributes;
 }
+// primitive.attributes
 function decodeOSGAttribute(attribute) {
+    var accessor = {};
     var Array = attribute.Array, ItemSize = attribute.ItemSize, Type = attribute.Type;
+    var type = TYPE_TABLE[Type]; // todo
 }
 function main() {
     // let a = new Uint8Array(8);

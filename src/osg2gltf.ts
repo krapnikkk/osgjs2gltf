@@ -13630,8 +13630,13 @@ function decodeOSGVertexAttribute(vertextAttribute: OSG.IVertexAttribute) {
     return attributes;
 }
 
+// primitive.attributes
 function decodeOSGAttribute(attribute:OSG.VertexAttribute){
+    let accessor = {};
     let { Array,ItemSize,Type} = attribute;
+    let type = TYPE_TABLE[Type]; // todo
+
+
 }
 
 function main() {
