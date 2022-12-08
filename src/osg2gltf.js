@@ -18,6 +18,15 @@ var TYPE_TABLE = {
     6: "MAT3",
     7: "MAT4"
 };
+var TARGET_TABLE = {
+    "ARRAY_BUFFER": 34962,
+    "ELEMENT_ARRAY_BUFFER": 34963
+};
+var CLASS_TABLE = {
+    "Uint8Array": Uint8Array,
+    "Uint16Array": Uint16Array,
+    "Uint32Array": Uint32Array
+};
 var ATTRIBUTE_TABLE = {
     'Vertex': 'POSITION',
     'Normal': 'NORMAL',
@@ -13469,32 +13478,42 @@ function generateGltfMesh(node) {
     };
     var primitive = Object.create({});
     primitives.push(primitive);
+    if (VertexAttributeList) { //accessors -> attributes
+        primitive.attributes = decodeOSGVertexAttribute(VertexAttributeList);
+    }
     if (PrimitiveSetList) { //accessors ->primitives[indices]
         var primitiveArr = decodeOSGPrimitiveSet(PrimitiveSetList);
-        Object.assign(primitive, primitiveArr[0]);
         if (primitiveArr.length > 1) {
             debugger;
         }
         ;
-    }
-    if (VertexAttributeList) { //accessors -> attributes
-        primitive.attributes = decodeOSGVertexAttribute(VertexAttributeList);
+        Object.assign(primitive, primitiveArr[0]);
     }
     if (StateSet) { // material
+        var hasMaterial = decodeOSGStateSet(StateSet['osg.StateSet']);
+        if (hasMaterial) {
+            Object.assign(primitive, { material: materialId++ });
+        }
     }
     globalMeshes.push(mesh);
 }
 function decodeOSGStateSet(stateSet) {
+    var flag = false;
     var AttributeList = stateSet.AttributeList, TextureAttributeList = stateSet.TextureAttributeList;
     if (AttributeList) {
         AttributeList.forEach(function (attribute) {
             var material = attribute['osg.Material'];
             var Name = material.Name, Ambient = material.Ambient;
+            // let state = findMaterialFromRoot(Name,_root_);
+            flag = true;
+            stateSet.materialId = materialId;
+            globalMaterials.push(material);
         });
     }
     if (TextureAttributeList) {
         debugger;
     }
+    return flag;
 }
 function findMaterialFromRoot(name, node) {
     var children = node.children;
@@ -13502,11 +13521,11 @@ function findMaterialFromRoot(name, node) {
     for (var i = 0; i < children.length; i++) {
         var child = children[i];
         stateSet = getMaterialFromOSGJS(name, child);
+        if (!stateSet) {
+            stateSet = findMaterialFromRoot(name, child);
+        }
         if (stateSet) {
             break;
-        }
-        else {
-            stateSet = findMaterialFromRoot(name, child);
         }
     }
     return stateSet;
@@ -13522,6 +13541,28 @@ function getMaterialFromOSGJS(name, node) {
     }
     return res;
 }
+function findGeometryFromRoot(name, node) {
+    var children = node.children;
+    var geometry;
+    for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        geometry = getGeometryFromOSGJS(name, child);
+        if (!geometry) {
+            geometry = findGeometryFromRoot(name, child);
+        }
+        if (geometry) {
+            break;
+        }
+    }
+    return geometry;
+}
+function getGeometryFromOSGJS(name, node) {
+    var res;
+    if (node.className() == 'Geometry' && node._name == name) { // todo maybe find all
+        res = node;
+    }
+    return res;
+}
 function decodeOSGPrimitiveSet(primitiveSetList) {
     var primitives = [];
     primitiveSetList.forEach(function (primitiveSet) {
@@ -13531,7 +13572,9 @@ function decodeOSGPrimitiveSet(primitiveSetList) {
             var gltfPrimitive = {};
             var Indices = primitive.Indices, Mode = primitive.Mode;
             var mode = PRIMITIVE_TABLE[Mode];
-            Object.assign(gltfPrimitive, { mode: mode, Indices: Indices });
+            Indices.accessorId = accessorId++;
+            globalAccessors.push(Indices);
+            Object.assign(gltfPrimitive, { mode: mode, indices: accessorId });
             primitives.push(gltfPrimitive);
             // let { Array, ItemSize, Type } = Indices;
             // if (Array) {
@@ -13548,7 +13591,9 @@ function decodeOSGVertexAttribute(vertextAttribute) {
         var attribute = vertextAttribute[key];
         // let { Array,ItemSize,Type} = attribute;
         var type = ATTRIBUTE_TABLE[key];
-        attributes[type] = attribute;
+        attribute.accessorId = accessorId++;
+        globalAccessors.push(attribute);
+        attributes[type] = accessorId;
     }
     return attributes;
 }
@@ -13560,8 +13605,32 @@ function main() {
     decodeOSGGeometries(nodeMap['osg.Geometry']);
     // nodeMap['']
     // decodeOSGNode();
-    console.log(gltfNodes);
     console.log(globalMeshes);
+    console.log(globalMaterials);
+    console.log(globalAccessors);
     debugger;
+}
+/**
+ *
+ * @param e
+ * @param t
+ * @param type Uint32Array
+ * @returns
+ */
+function Uint8ArrayTransfrom(e, size, type) {
+    for (var r = new CLASS_TABLE[type](size), a = 0, o = 0; a !== size;) {
+        var s = 0, l = 0;
+        do {
+            s |= (127 & e[o]) << l,
+                l += 7;
+        } while (0 != (128 & e[o++]));
+        r[a++] = s;
+    }
+    if ("U" !== type[0])
+        for (var u = 0; u < size; ++u) {
+            var c = r[u];
+            r[u] = c >> 1 ^ -(1 & c);
+        }
+    return r;
 }
 main();

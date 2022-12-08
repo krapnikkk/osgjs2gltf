@@ -155,6 +155,7 @@ declare module OSG {
     }
 
     interface StateSet extends BaseData {
+        materialId?:number;
         AttributeList?: IAttribute[]
         TextureAttributeList?:any[]; // todo
     }
@@ -179,12 +180,14 @@ declare module OSG {
     }
 
     interface IIndices extends BaseData {
+        accessorId?:number;
         Array: IArray,
         ItemSize: number,
         Type: AttributeType, // ELEMENT_ARRAY_BUFFER
     }
 
     interface VertexAttribute extends BaseData {
+        accessorId?:number;
         Array?: IArray,
         ItemSize?: number,
         Type?: AttributeType, // ELEMENT_ARRAY_BUFFER
