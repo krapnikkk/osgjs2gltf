@@ -27,6 +27,11 @@ var CLASS_TABLE = {
     "Uint16Array": Uint16Array,
     "Uint32Array": Uint32Array
 };
+var COMPONENT_TYPE_TABE = {
+    "DrawElementsUByte": 5121,
+    "DrawElementsUShort": 5123,
+    "DrawElementsUInt": 5125
+};
 var ATTRIBUTE_TABLE = {
     'Vertex': 'POSITION',
     'Normal': 'NORMAL',
@@ -13589,13 +13594,16 @@ function decodeOSGVertexAttribute(vertextAttribute) {
     var attributes = {};
     for (var key in vertextAttribute) {
         var attribute = vertextAttribute[key];
-        // let { Array,ItemSize,Type} = attribute;
         var type = ATTRIBUTE_TABLE[key];
         attribute.accessorId = accessorId++;
+        var attr = decodeOSGAttribute(attribute);
         globalAccessors.push(attribute);
         attributes[type] = accessorId;
     }
     return attributes;
+}
+function decodeOSGAttribute(attribute) {
+    var Array = attribute.Array, ItemSize = attribute.ItemSize, Type = attribute.Type;
 }
 function main() {
     // let a = new Uint8Array(8);
@@ -13605,7 +13613,7 @@ function main() {
     decodeOSGGeometries(nodeMap['osg.Geometry']);
     // nodeMap['']
     // decodeOSGNode();
-    console.log(globalMeshes);
+    // console.log(globalMeshes);
     console.log(globalMaterials);
     console.log(globalAccessors);
     debugger;

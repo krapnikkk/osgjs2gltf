@@ -10,7 +10,7 @@ var PRIMITIVE_TABLE = {
     "TRIANGLE_FAN": 6
 };
 
-var TYPE_TABLE = {
+let TYPE_TABLE = {
     1: "SCALAR",
     2: "VEC2",
     3: "VEC3",
@@ -31,7 +31,13 @@ let CLASS_TABLE = {
     "Uint32Array": Uint32Array
 }
 
-var ATTRIBUTE_TABLE = {
+let COMPONENT_TYPE_TABE = {
+    "DrawElementsUByte":5121,
+    "DrawElementsUShort":5123,
+    "DrawElementsUInt":5125
+}
+
+let ATTRIBUTE_TABLE = {
     'Vertex': 'POSITION',
     'Normal': 'NORMAL',
     'Tangent': 'TANGENT',
@@ -55,7 +61,7 @@ var ATTRIBUTE_TABLE = {
     'Bones': 'JOINTS_0',
     'Weights': 'WEIGHTS_0'
 }
-var gltf: glTF = {
+let gltf: glTF = {
     accessors: [],
     asset: {
         generator: "gltf-creator",
@@ -13614,13 +13620,18 @@ function decodeOSGVertexAttribute(vertextAttribute: OSG.IVertexAttribute) {
     let attributes = {};
     for (let key in vertextAttribute) {
         let attribute = vertextAttribute[<OSG.ATTRIBUTE_TYPE>key];
-        // let { Array,ItemSize,Type} = attribute;
+        
         let type = ATTRIBUTE_TABLE[key];
         attribute.accessorId = accessorId++;
+        let attr = decodeOSGAttribute(attribute);
         globalAccessors.push(attribute);
         attributes[type] = accessorId;
     }
     return attributes;
+}
+
+function decodeOSGAttribute(attribute:OSG.VertexAttribute){
+    let { Array,ItemSize,Type} = attribute;
 }
 
 function main() {
@@ -13631,7 +13642,7 @@ function main() {
     decodeOSGGeometries(nodeMap['osg.Geometry']);
     // nodeMap['']
     // decodeOSGNode();
-    console.log(globalMeshes);
+    // console.log(globalMeshes);
     console.log(globalMaterials);
     console.log(globalAccessors);
     debugger;
