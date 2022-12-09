@@ -31,10 +31,19 @@ let CLASS_TABLE = {
     "Uint32Array": Uint32Array
 }
 
-let COMPONENT_TYPE_TABE = {
+let INDICES_COMPONENT_TYPE_TABE = {
     "DrawElementsUByte":5121,
     "DrawElementsUShort":5123,
     "DrawElementsUInt":5125
+}
+
+let COMPONENT_TYPE_TABE = {
+    "BYTE": 5120,
+    "UNSIGNED_BYTE": 5121,
+    "SHORT": 5122,
+    "UNSIGNED_SHORT": 5123,
+    "UNSIGNED_INT": 5125,
+    "FLOAT": 5126
 }
 
 let ATTRIBUTE_TABLE = {
@@ -13499,7 +13508,10 @@ function generateGltfMesh(node: OSG.Geometry) {
     primitives.push(primitive);
 
     if (VertexAttributeList) { //accessors -> attributes
-        primitive.attributes = decodeOSGVertexAttribute(VertexAttributeList);
+        let attributes = decodeOSGVertexAttribute(VertexAttributeList);
+        if(attributes){
+            primitive.attributes = attributes;
+        }
     }
 
     if (PrimitiveSetList) {//accessors ->primitives[indices]
@@ -13602,7 +13614,10 @@ function decodeOSGPrimitiveSet(primitiveSetList: OSG.IPrimitiveSet[]) {
             let { Indices, Mode } = primitive;
             let mode = PRIMITIVE_TABLE[Mode];
             Indices.accessorId = accessorId++;
+
             globalAccessors.push(Indices);
+
+
             Object.assign(gltfPrimitive, { mode, indices: accessorId });
             primitives.push(gltfPrimitive);
             // let { Array, ItemSize, Type } = Indices;
@@ -13620,10 +13635,13 @@ function decodeOSGVertexAttribute(vertextAttribute: OSG.IVertexAttribute) {
     let attributes = {};
     for (let key in vertextAttribute) {
         let attribute = vertextAttribute[<OSG.ATTRIBUTE_TYPE>key];
-        
+        delete attribute.UniqueID;
+        if(JSON.stringify(attribute) === "{}"){
+            continue;
+        }
         let type = ATTRIBUTE_TABLE[key];
         attribute.accessorId = accessorId++;
-        let attr = decodeOSGAttribute(attribute);
+        // let attr = decodeOSGAttribute(attribute);
         globalAccessors.push(attribute);
         attributes[type] = accessorId;
     }
@@ -13634,10 +13652,16 @@ function decodeOSGVertexAttribute(vertextAttribute: OSG.IVertexAttribute) {
 function decodeOSGAttribute(attribute:OSG.VertexAttribute){
     let accessor = {};
     let { Array,ItemSize,Type} = attribute;
-    let type = TYPE_TABLE[Type]; // todo
-
-
+    let type = TYPE_TABLE[ItemSize]; // todo
 }
+
+// primitive.indices
+function decodeOSGIndice(indices:OSG.IIndices,uType:OSG.DrawElementsType){
+    let accessor = {};
+    let { Array,ItemSize,Type} = indices;
+    let type = TYPE_TABLE[ItemSize]; // todo
+}
+
 
 function main() {
     // let a = new Uint8Array(8);
