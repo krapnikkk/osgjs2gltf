@@ -27,10 +27,18 @@ var CLASS_TABLE = {
     "Uint16Array": Uint16Array,
     "Uint32Array": Uint32Array
 };
-var COMPONENT_TYPE_TABE = {
+var INDICES_COMPONENT_TYPE_TABE = {
     "DrawElementsUByte": 5121,
     "DrawElementsUShort": 5123,
     "DrawElementsUInt": 5125
+};
+var COMPONENT_TYPE_TABE = {
+    "BYTE": 5120,
+    "UNSIGNED_BYTE": 5121,
+    "SHORT": 5122,
+    "UNSIGNED_SHORT": 5123,
+    "UNSIGNED_INT": 5125,
+    "FLOAT": 5126
 };
 var ATTRIBUTE_TABLE = {
     'Vertex': 'POSITION',
@@ -13371,8 +13379,7 @@ var globalNodes = [], gltfNodes = [], nodeId = 1;
 var globalAccessors = [], accessorId = 0;
 var globalMeshes = [], meshId = 0;
 var globalMaterials = [], materialId = 0;
-var globalIndices = [], indiceId = 0;
-var globalPrimitiveSetList = [], primitiveSetId = 0;
+var globalBufferViews = [], bufferViewId = 0;
 function decodeUint8Array(e) {
     var i = "";
     for (var n = new Uint8Array(e), r = 0; r < e.length; r += 65535)
@@ -13484,7 +13491,10 @@ function generateGltfMesh(node) {
     var primitive = Object.create({});
     primitives.push(primitive);
     if (VertexAttributeList) { //accessors -> attributes
-        primitive.attributes = decodeOSGVertexAttribute(VertexAttributeList);
+        var attributes = decodeOSGVertexAttribute(VertexAttributeList, Name);
+        if (attributes) {
+            primitive.attributes = attributes;
+        }
     }
     if (PrimitiveSetList) { //accessors ->primitives[indices]
         var primitiveArr = decodeOSGPrimitiveSet(PrimitiveSetList);
@@ -13546,14 +13556,14 @@ function getMaterialFromOSGJS(name, node) {
     }
     return res;
 }
-function findGeometryFromRoot(name, node) {
+function findGeometryFromRoot(name, node, key) {
     var children = node.children;
     var geometry;
     for (var i = 0; i < children.length; i++) {
         var child = children[i];
-        geometry = getGeometryFromOSGJS(name, child);
+        geometry = getGeometryFromOSGJS(name, child, key);
         if (!geometry) {
-            geometry = findGeometryFromRoot(name, child);
+            geometry = findGeometryFromRoot(name, child, key);
         }
         if (geometry) {
             break;
@@ -13561,9 +13571,9 @@ function findGeometryFromRoot(name, node) {
     }
     return geometry;
 }
-function getGeometryFromOSGJS(name, node) {
+function getGeometryFromOSGJS(name, node, key) {
     var res;
-    if (node.className() == 'Geometry' && node._name == name) { // todo maybe find all
+    if (node.className() == 'Geometry' && node._name == name && node['getAttributes']()[key]) { // todo maybe find all
         res = node;
     }
     return res;
@@ -13577,36 +13587,107 @@ function decodeOSGPrimitiveSet(primitiveSetList) {
             var gltfPrimitive = {};
             var Indices = primitive.Indices, Mode = primitive.Mode;
             var mode = PRIMITIVE_TABLE[Mode];
-            Indices.accessorId = accessorId++;
-            globalAccessors.push(Indices);
+            var accessor = decodeOSGIndice(Indices, key);
+            accessor.accessorId = accessorId++;
+            globalAccessors.push(accessor);
             Object.assign(gltfPrimitive, { mode: mode, indices: accessorId });
             primitives.push(gltfPrimitive);
-            // let { Array, ItemSize, Type } = Indices;
-            // if (Array) {
-            // } else {
-            //     debugger;
-            // }
         }
     });
     return primitives;
 }
-function decodeOSGVertexAttribute(vertextAttribute) {
+function decodeOSGVertexAttribute(vertextAttribute, Name) {
     var attributes = {};
     for (var key in vertextAttribute) {
         var attribute = vertextAttribute[key];
+        delete attribute.UniqueID;
+        if (JSON.stringify(attribute) === "{}") {
+            continue;
+        }
         var type = ATTRIBUTE_TABLE[key];
         attribute.accessorId = accessorId++;
-        var attr = decodeOSGAttribute(attribute);
-        globalAccessors.push(attribute);
-        attributes[type] = accessorId;
+        var accessor = decodeOSGAttribute(attribute, Name, key);
+        if (accessor) {
+            accessor.accessorId = accessorId++;
+            globalAccessors.push(accessor);
+            attributes[type] = accessorId;
+        }
+        else {
+            debugger;
+        }
     }
     return attributes;
 }
 // primitive.attributes
-function decodeOSGAttribute(attribute) {
-    var accessor = {};
-    var Array = attribute.Array, ItemSize = attribute.ItemSize, Type = attribute.Type;
-    var type = TYPE_TABLE[Type]; // todo
+function decodeOSGAttribute(attribute, Name, key) {
+    var accessor = Object.create({});
+    var geometry = findGeometryFromRoot(Name, _root_, key);
+    if (!geometry) {
+        return;
+    }
+    var _attributes = geometry._attributes;
+    var _attribute = _attributes[key];
+    var _minMax = _attribute._minMax, _type = _attribute._type;
+    var Array = attribute.Array, ItemSize = attribute.ItemSize, Type = attribute.Type; // bufferViews
+    var byteArray = Object.values(Array)[0];
+    var Size = byteArray.Size, Offset = byteArray.Offset;
+    var type = TYPE_TABLE[ItemSize];
+    var bufferView = decodeBufferView(byteArray, Type);
+    if (_minMax) {
+        Object.assign(accessor, {
+            bufferView: bufferView,
+            componentType: _type,
+            byteOffset: Offset,
+            count: Size,
+            max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
+            mim: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
+            type: type
+        });
+    }
+    else {
+        Object.assign(accessor, {
+            bufferView: bufferView,
+            componentType: _type,
+            byteOffset: Offset,
+            count: Size,
+            type: type
+        });
+    }
+    bufferViewId++;
+    return accessor;
+}
+// primitive.indices
+function decodeOSGIndice(indices, uType) {
+    var accessor = Object.create({});
+    var Array = indices.Array, ItemSize = indices.ItemSize, Type = indices.Type; // bufferViews
+    var type = TYPE_TABLE[ItemSize];
+    var componentType = INDICES_COMPONENT_TYPE_TABE[uType];
+    var byteArray = Object.values(Array)[0];
+    var Size = byteArray.Size, Offset = byteArray.Offset;
+    var bufferView = decodeBufferView(byteArray, Type);
+    Object.assign(accessor, {
+        bufferView: bufferView,
+        byteOffset: Offset,
+        componentType: componentType,
+        count: Size,
+        type: type
+    });
+    bufferViewId++;
+    return accessor;
+}
+function decodeBufferView(byteArray, type) {
+    var bufferView = Object.create({});
+    var Size = byteArray.Size, Offset = byteArray.Offset;
+    Object.assign(bufferView, {
+        "buffer": 0,
+        "byteLength": Size,
+        "byteOffset": Offset,
+        "byteStride": 12,
+        "name": "floatBufferViews",
+        "target": TARGET_TABLE[type]
+    });
+    globalBufferViews.push(bufferView);
+    return bufferViewId;
 }
 function main() {
     // let a = new Uint8Array(8);

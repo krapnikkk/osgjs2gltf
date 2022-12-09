@@ -164,7 +164,7 @@ declare module OSG {
         "osg.Material": Material,
     }
 
-    type DrawElementsType = "DrawElementsUByte" | "DrawElementsUShort" | "DrawElementsUInt";
+    export type DrawElementsType = "DrawElementsUByte" | "DrawElementsUShort" | "DrawElementsUInt";
 
     type IPrimitiveSet = {
         [key in DrawElementsType]?: IDrawElement

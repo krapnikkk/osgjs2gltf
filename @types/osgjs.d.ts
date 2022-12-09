@@ -165,6 +165,7 @@ declare module OSGJS {
   }
 
   class BufferArray extends GLObject {
+    _minMax:IMinMax;
     _instanceID: number;
     _buffer: WebGLBuffer;
     _usage: BufferArrayType;
@@ -176,6 +177,15 @@ declare module OSGJS {
     _itemSize: number;
     _numItems:number;//this._elements.length / this._itemSize;
     _sDeletedGLBufferArrayCache: Map<WebGLRenderingContext, WebGLBuffer[]>;
+  }
+
+  interface IMinMax{
+    xmin:number,
+    ymin:number,
+    zmin:number,
+    xmax:number,
+    ymax:number,
+    zmax:number,
   }
 
   interface attributes {

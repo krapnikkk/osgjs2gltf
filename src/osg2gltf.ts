@@ -32,9 +32,9 @@ let CLASS_TABLE = {
 }
 
 let INDICES_COMPONENT_TYPE_TABE = {
-    "DrawElementsUByte":5121,
-    "DrawElementsUShort":5123,
-    "DrawElementsUInt":5125
+    "DrawElementsUByte": 5121,
+    "DrawElementsUShort": 5123,
+    "DrawElementsUInt": 5125
 }
 
 let COMPONENT_TYPE_TABE = {
@@ -13385,8 +13385,7 @@ let globalNodes = [], gltfNodes = [], nodeId = 1;
 let globalAccessors = [], accessorId = 0;
 let globalMeshes = [], meshId = 0;
 let globalMaterials = [], materialId = 0;
-let globalIndices = [], indiceId = 0;
-let globalPrimitiveSetList = [], primitiveSetId = 0;
+let globalBufferViews = [], bufferViewId = 0;
 
 function decodeUint8Array(e: Uint8Array): string {
     let i = "";
@@ -13508,8 +13507,8 @@ function generateGltfMesh(node: OSG.Geometry) {
     primitives.push(primitive);
 
     if (VertexAttributeList) { //accessors -> attributes
-        let attributes = decodeOSGVertexAttribute(VertexAttributeList);
-        if(attributes){
+        let attributes = decodeOSGVertexAttribute(VertexAttributeList, Name);
+        if (attributes) {
             primitive.attributes = attributes;
         }
     }
@@ -13578,14 +13577,14 @@ function getMaterialFromOSGJS(name: string, node: OSGJS.Node): OSGJS.StateSet {
 
 }
 
-function findGeometryFromRoot(name: string, node: OSGJS.Node): OSGJS.Geometry {
+function findGeometryFromRoot(name: string, node: OSGJS.Node,key:string): OSGJS.Geometry {
     let { children } = node;
     let geometry: OSGJS.Geometry;
     for (let i = 0; i < children.length; i++) {
         let child = children[i];
-        geometry = getGeometryFromOSGJS(name, child);
+        geometry = getGeometryFromOSGJS(name, child,key);
         if (!geometry) {
-            geometry = findGeometryFromRoot(name, child);
+            geometry = findGeometryFromRoot(name, child,key);
         }
         if (geometry) {
             break;
@@ -13594,9 +13593,9 @@ function findGeometryFromRoot(name: string, node: OSGJS.Node): OSGJS.Geometry {
     return geometry;
 }
 
-function getGeometryFromOSGJS(name: string, node: OSGJS.Node): OSGJS.Geometry {
+function getGeometryFromOSGJS(name: string, node: OSGJS.Node,key:string): OSGJS.Geometry {
     let res: OSGJS.Geometry;
-    if (node.className() == 'Geometry' && node._name == name) { // todo maybe find all
+    if (node.className() == 'Geometry' && node._name == name && node['getAttributes']()[key]) { // todo maybe find all
         res = node as OSGJS.Geometry;
     }
     return res;
@@ -13613,53 +13612,111 @@ function decodeOSGPrimitiveSet(primitiveSetList: OSG.IPrimitiveSet[]) {
             }
             let { Indices, Mode } = primitive;
             let mode = PRIMITIVE_TABLE[Mode];
-            Indices.accessorId = accessorId++;
-
-            globalAccessors.push(Indices);
+            let accessor = decodeOSGIndice(Indices, <OSG.DrawElementsType>key);
+            accessor.accessorId = accessorId++;
+            globalAccessors.push(accessor);
 
 
             Object.assign(gltfPrimitive, { mode, indices: accessorId });
             primitives.push(gltfPrimitive);
-            // let { Array, ItemSize, Type } = Indices;
-            // if (Array) {
-
-            // } else {
-            //     debugger;
-            // }
         }
     })
     return primitives;
 }
 
-function decodeOSGVertexAttribute(vertextAttribute: OSG.IVertexAttribute) {
+function decodeOSGVertexAttribute(vertextAttribute: OSG.IVertexAttribute, Name: string) {
     let attributes = {};
     for (let key in vertextAttribute) {
         let attribute = vertextAttribute[<OSG.ATTRIBUTE_TYPE>key];
         delete attribute.UniqueID;
-        if(JSON.stringify(attribute) === "{}"){
+        if (JSON.stringify(attribute) === "{}") {
             continue;
         }
         let type = ATTRIBUTE_TABLE[key];
         attribute.accessorId = accessorId++;
-        // let attr = decodeOSGAttribute(attribute);
-        globalAccessors.push(attribute);
-        attributes[type] = accessorId;
+        let accessor = decodeOSGAttribute(attribute, Name, <OSG.ATTRIBUTE_TYPE>key);
+        if(accessor){
+            accessor.accessorId = accessorId++;
+            globalAccessors.push(accessor);
+            attributes[type] = accessorId;
+        }else{
+            debugger;
+        }
     }
     return attributes;
 }
 
 // primitive.attributes
-function decodeOSGAttribute(attribute:OSG.VertexAttribute){
-    let accessor = {};
-    let { Array,ItemSize,Type} = attribute;
-    let type = TYPE_TABLE[ItemSize]; // todo
+function decodeOSGAttribute(attribute: OSG.VertexAttribute, Name: string, key: OSG.ATTRIBUTE_TYPE) {
+    let accessor = Object.create({});
+    let geometry = findGeometryFromRoot(Name, _root_,key);
+    if(!geometry){return}
+    let { _attributes } = geometry;
+    let _attribute = _attributes[key];
+    let {_minMax,_type} = _attribute;
+    let { Array, ItemSize, Type } = attribute; // bufferViews
+    let byteArray = Object.values(Array)[0];
+    let { Size, Offset } = byteArray;
+    let type = TYPE_TABLE[ItemSize];
+    let bufferView = decodeBufferView(byteArray,Type);
+    if(_minMax){
+        Object.assign(accessor, {
+            bufferView,
+            componentType:_type,
+            byteOffset: Offset,
+            count: Size,
+            max:[_minMax.xmax,_minMax.ymax,_minMax.zmax],
+            mim:[_minMax.xmin,_minMax.ymin,_minMax.zmin],
+            type,
+        });
+    }else{
+        Object.assign(accessor, {
+            bufferView,
+            componentType:_type,
+            byteOffset: Offset,
+            count: Size,
+            type,
+        });
+    }
+    bufferViewId++;
+    return accessor;
+
 }
 
 // primitive.indices
-function decodeOSGIndice(indices:OSG.IIndices,uType:OSG.DrawElementsType){
-    let accessor = {};
-    let { Array,ItemSize,Type} = indices;
-    let type = TYPE_TABLE[ItemSize]; // todo
+function decodeOSGIndice(indices: OSG.IIndices, uType: OSG.DrawElementsType) {
+    let accessor = Object.create({});
+    let { Array, ItemSize, Type } = indices; // bufferViews
+    let type = TYPE_TABLE[ItemSize];
+    let componentType = INDICES_COMPONENT_TYPE_TABE[uType];
+    let byteArray = Object.values(Array)[0];
+    let { Size, Offset } = byteArray;
+    let bufferView = decodeBufferView(byteArray,Type);
+    Object.assign(accessor, {
+        bufferView,
+        byteOffset: Offset,
+        componentType,
+        count: Size,
+        type,
+    });
+    bufferViewId++;
+    return accessor;
+}
+
+function decodeBufferView(byteArray:OSG.IByteArray,type:OSG.AttributeType):number{
+    let bufferView = Object.create({});
+    let { Size, Offset } = byteArray;
+
+    Object.assign(bufferView,{
+        "buffer": 0,
+        "byteLength": Size,
+        "byteOffset": Offset,
+        "byteStride": 12,
+        "name": "floatBufferViews",
+        "target": TARGET_TABLE[type]
+      });
+      globalBufferViews.push(bufferView);
+    return bufferViewId;
 }
 
 
