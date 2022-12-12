@@ -13721,17 +13721,9 @@ function decodeBufferView(byteArray:OSG.IByteArray,type:OSG.AttributeType):numbe
 
 
 function main() {
-    // let a = new Uint8Array(8);
-    // let osg = decodeFileBinz(a);
     decodeOSGRoot(osg);
     decodeOSGNode(globalNodes);
     decodeOSGGeometries(nodeMap['osg.Geometry']);
-    // nodeMap['']
-    // decodeOSGNode();
-    // console.log(globalMeshes);
-    console.log(globalMaterials);
-    console.log(globalAccessors);
-    debugger;
 }
 
 main();

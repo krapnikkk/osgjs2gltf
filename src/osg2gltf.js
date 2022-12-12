@@ -13702,27 +13702,4 @@ function main() {
     console.log(globalAccessors);
     debugger;
 }
-/**
- *
- * @param e
- * @param t
- * @param type Uint32Array
- * @returns
- */
-function Uint8ArrayTransfrom(e, size, type) {
-    for (var r = new CLASS_TABLE[type](size), a = 0, o = 0; a !== size;) {
-        var s = 0, l = 0;
-        do {
-            s |= (127 & e[o]) << l,
-                l += 7;
-        } while (0 != (128 & e[o++]));
-        r[a++] = s;
-    }
-    if ("U" !== type[0])
-        for (var u = 0; u < size; ++u) {
-            var c = r[u];
-            r[u] = c >> 1 ^ -(1 & c);
-        }
-    return r;
-}
 main();
