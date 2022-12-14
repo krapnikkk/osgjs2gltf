@@ -13595,8 +13595,10 @@ function findGeometryFromRoot(name: string, node: OSGJS.Node,key:string): OSGJS.
 
 function getGeometryFromOSGJS(name: string, node: OSGJS.Node,key:string): OSGJS.Geometry {
     let res: OSGJS.Geometry;
-    if (node.className() == 'Geometry' && node._name == name && node['getAttributes']()[key]) { // todo maybe find all
-        res = node as OSGJS.Geometry;
+    if (node.className() == 'Geometry' && node._name == name) { // todo maybe find all
+        if(node['getAttributes']()[key]||node['getAttributes']()[`_${key.replace("TexCoord","")}`]){
+            res = node as OSGJS.Geometry;
+        }
     }
     return res;
 }
@@ -13652,7 +13654,7 @@ function decodeOSGAttribute(attribute: OSG.VertexAttribute, Name: string, key: O
     let geometry = findGeometryFromRoot(Name, _root_,key);
     if(!geometry){return}
     let { _attributes } = geometry;
-    let _attribute = _attributes[key];
+    let _attribute = _attributes[key] || _attributes[`_${key.replace("TexCoord","")}`];
     let {_minMax,_type} = _attribute;
     let { Array, ItemSize, Type } = attribute; // bufferViews
     let byteArray = Object.values(Array)[0];

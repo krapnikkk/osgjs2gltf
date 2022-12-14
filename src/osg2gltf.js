@@ -13573,8 +13573,10 @@ function findGeometryFromRoot(name, node, key) {
 }
 function getGeometryFromOSGJS(name, node, key) {
     var res;
-    if (node.className() == 'Geometry' && node._name == name && node['getAttributes']()[key]) { // todo maybe find all
-        res = node;
+    if (node.className() == 'Geometry' && node._name == name) { // todo maybe find all
+        if (node['getAttributes']()[key] || node['getAttributes']()["_".concat(key.replace("TexCoord", ""))]) {
+            res = node;
+        }
     }
     return res;
 }
@@ -13626,7 +13628,7 @@ function decodeOSGAttribute(attribute, Name, key) {
         return;
     }
     var _attributes = geometry._attributes;
-    var _attribute = _attributes[key];
+    var _attribute = _attributes[key] || _attributes["_".concat(key.replace("TexCoord", ""))];
     var _minMax = _attribute._minMax, _type = _attribute._type;
     var Array = attribute.Array, ItemSize = attribute.ItemSize, Type = attribute.Type; // bufferViews
     var byteArray = Object.values(Array)[0];
@@ -13690,16 +13692,8 @@ function decodeBufferView(byteArray, type) {
     return bufferViewId;
 }
 function main() {
-    // let a = new Uint8Array(8);
-    // let osg = decodeFileBinz(a);
     decodeOSGRoot(osg);
     decodeOSGNode(globalNodes);
     decodeOSGGeometries(nodeMap['osg.Geometry']);
-    // nodeMap['']
-    // decodeOSGNode();
-    // console.log(globalMeshes);
-    console.log(globalMaterials);
-    console.log(globalAccessors);
-    debugger;
 }
 main();
