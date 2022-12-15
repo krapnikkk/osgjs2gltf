@@ -98,7 +98,7 @@ declare module OSGJS {
   }
 
   class AttributePair {
-    _object: Uniform|Attribute;
+    _object: Attribute;
     _value: string;
   }
 
@@ -107,11 +107,25 @@ declare module OSGJS {
   }
 
   interface activeChannel{
+    attributes:channelAttribute
+  }
+
+  interface channelAttribute{
+    color?:Float32Array;
+    textureModel?:ITextureModel,
+    factor:number,
+    name:string;//"AlbedoPBR" | "MetalnessPBR" | "GlossinessPBR" | "EmitColor" | "SpecularF0"
+  }
+
+  interface ITextureModel{
     attributes:{
-      color?:Float32Array;
-      name:string;//"AlbedoPBR" | "MetalnessPBR" | "GlossinessPBR" | "EmitColor" | "SpecularF0"
-    },
-    _valueFactor:string;
+      image:{
+        attributes:{
+          name:string,
+          images:any[]
+        }
+      }
+    }
   }
 
   enum DrawElementsDataFormat {

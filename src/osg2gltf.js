@@ -13518,8 +13518,14 @@ function decodeOSGStateSet(stateSet) {
     if (AttributeList) {
         AttributeList.forEach(function (attribute) {
             var material = attribute['osg.Material'];
-            var Name = material.Name, Ambient = material.Ambient;
-            // let state = findMaterialFromRoot(Name,_root_);
+            var Name = material.Name;
+            var state = findMaterialFromRoot(Name, _root_);
+            if (state) {
+                decodeOSGJSStateSet(state);
+            }
+            else {
+                debugger;
+            }
             flag = true;
             stateSet.materialId = materialId;
             globalMaterials.push(material);
@@ -13529,6 +13535,27 @@ function decodeOSGStateSet(stateSet) {
         debugger;
     }
     return flag;
+}
+function decodeOSGJSStateSet(stateSet) {
+    var _attributeArray = stateSet._attributeArray;
+    var attribute = _attributeArray[0];
+    var _object = attribute._object;
+    var _activeChannels = _object._activeChannels;
+    if (_activeChannels.length > 5) {
+        debugger;
+    }
+    ;
+    // 0->baseColor 1 -> metalness 2-> glossness/roughness 3->emission  4->specularF0
+    _activeChannels.forEach(function (channel) {
+        var attributes = channel.attributes;
+        var name = attributes.name, color = attributes.color, factor = attributes.factor, textureModel = attributes.textureModel;
+        if (name == "Base Color") {
+            if (color) {
+            }
+        }
+        else {
+        }
+    });
 }
 function findMaterialFromRoot(name, node) {
     var children = node.children;

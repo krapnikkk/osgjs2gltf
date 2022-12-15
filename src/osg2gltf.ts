@@ -13535,8 +13535,13 @@ function decodeOSGStateSet(stateSet: OSG.StateSet): boolean {
     if (AttributeList) {
         AttributeList.forEach((attribute) => {
             let material = attribute['osg.Material'];
-            let { Name, Ambient, } = material;
-            // let state = findMaterialFromRoot(Name,_root_);
+            let { Name } = material;
+            let state = findMaterialFromRoot(Name,_root_);
+            if(state){
+                decodeOSGJSStateSet(state);
+            }else{
+                debugger
+            }
             flag = true;
             stateSet.materialId = materialId;
             globalMaterials.push(material);
@@ -13546,6 +13551,27 @@ function decodeOSGStateSet(stateSet: OSG.StateSet): boolean {
         debugger;
     }
     return flag;
+}
+
+function decodeOSGJSStateSet(stateSet:OSGJS.StateSet){
+    let {_attributeArray} = stateSet;
+    let attribute = _attributeArray[0];
+    let {_object} = attribute;
+    let {_activeChannels} = _object;
+    if(_activeChannels.length>5){debugger};
+    // 0->baseColor 1 -> metalness 2-> glossness/roughness 3->emission  4->specularF0
+    _activeChannels.forEach((channel)=>{
+        let {attributes} = channel;
+        let {name,color,factor,textureModel} = attributes;
+        if(name == "Base Color"){
+            if(color){
+
+            }
+        }else{
+
+        }
+    })
+
 }
 
 function findMaterialFromRoot(name: string, node: OSGJS.Node): OSGJS.StateSet {
