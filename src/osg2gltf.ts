@@ -13733,7 +13733,8 @@ function decodeOSGAttribute(attribute: OSG.VertexAttribute, Name: string, key: O
     let byteArray = Object.values(Array)[0];
     let { Size, Offset } = byteArray;
     let type = TYPE_TABLE[ItemSize];
-    let byteStride = _elements.byteLength/Size;
+    let {byteLength,} = _elements;
+    let byteStride = byteLength/Size;
     let bufferView = decodeBufferView(byteArray, Type);
     if (_minMax) {
         Object.assign(accessor, {
