@@ -13706,11 +13706,12 @@ function decodeOSGAttribute(attribute, Name, key) {
     }
     let { _attributes } = geometry;
     let _attribute = _attributes[key] || _attributes[`_${key.replace("TexCoord", "")}`];
-    let { _minMax, _type } = _attribute;
+    let { _minMax, _type, _elements } = _attribute;
     let { Array, ItemSize, Type } = attribute; // bufferViews
     let byteArray = Object.values(Array)[0];
     let { Size, Offset } = byteArray;
     let type = TYPE_TABLE[ItemSize];
+    let byteStride = _elements.byteLength / Size;
     let bufferView = decodeBufferView(byteArray, Type);
     if (_minMax) {
         Object.assign(accessor, {
@@ -13757,6 +13758,7 @@ function decodeOSGIndice(indices, uType) {
 function decodeBufferView(byteArray, type) {
     let bufferView = Object.create({});
     let { Size, Offset } = byteArray;
+    debugger;
     Object.assign(bufferView, {
         "buffer": 0,
         "byteLength": Size,
@@ -13806,8 +13808,10 @@ function findSameObjact(arr, obj) {
     return arr.findIndex((object) => JSON.stringify(object) == JSON.stringify(obj));
 }
 function main() {
+    clearUint8Array();
     decodeOSGRoot(osg);
     decodeOSGNode(globalNodes);
     decodeOSGGeometries(nodeMap['osg.Geometry']);
 }
 main();
+export {};

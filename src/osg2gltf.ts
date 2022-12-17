@@ -1,5 +1,6 @@
 import { glTF } from "../@types/gltf";
 declare var _root_: OSGJS.Node;
+declare function clearUint8Array():void;
 var PRIMITIVE_TABLE = {
     "POINTS": 0,
     "LINES": 1,
@@ -13727,11 +13728,12 @@ function decodeOSGAttribute(attribute: OSG.VertexAttribute, Name: string, key: O
     if (!geometry) { return }
     let { _attributes } = geometry;
     let _attribute = _attributes[key] || _attributes[`_${key.replace("TexCoord", "")}`];
-    let { _minMax, _type } = _attribute;
+    let { _minMax, _type,_elements } = _attribute;
     let { Array, ItemSize, Type } = attribute; // bufferViews
     let byteArray = Object.values(Array)[0];
     let { Size, Offset } = byteArray;
     let type = TYPE_TABLE[ItemSize];
+    let byteStride = _elements.byteLength/Size;
     let bufferView = decodeBufferView(byteArray, Type);
     if (_minMax) {
         Object.assign(accessor, {
@@ -13780,7 +13782,7 @@ function decodeOSGIndice(indices: OSG.IIndices, uType: OSG.DrawElementsType) {
 function decodeBufferView(byteArray: OSG.IByteArray, type: OSG.AttributeType): number {
     let bufferView = Object.create({});
     let { Size, Offset } = byteArray;
-
+    debugger;
     Object.assign(bufferView, {
         "buffer": 0,
         "byteLength": Size,
@@ -13839,6 +13841,7 @@ function findSameObjact(arr: Array<any>, obj: any): number {
 
 
 function main() {
+    clearUint8Array();
     decodeOSGRoot(osg);
     decodeOSGNode(globalNodes);
     decodeOSGGeometries(nodeMap['osg.Geometry']);
