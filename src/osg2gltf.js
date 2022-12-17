@@ -13379,6 +13379,8 @@ let globalMeshes = [], meshId = 0;
 let globalMaterials = [], materialId = 0;
 let globalBufferViews = [], bufferViewId = 0;
 let globalTextures = [], textureId = 0;
+let globalImages = [];
+let globalSamplers = [];
 function decodeUint8Array(e) {
     let i = "";
     for (var n = new Uint8Array(e), r = 0; r < e.length; r += 65535)
@@ -13552,7 +13554,7 @@ function decodeOSGJSStateSet(stateSet) {
     ;
     // 0->baseColor 1 -> metalness 2-> glossness/roughness 3->emission  4->specularF0
     let pbrMetallicRoughness = Object.create({});
-    let emissiveFactor;
+    let emissiveFactor, emissiveTexture;
     _activeChannels.forEach((channel) => {
         let { attributes } = channel;
         let { color, factor, textureModel, displayName } = attributes;
@@ -13562,10 +13564,11 @@ function decodeOSGJSStateSet(stateSet) {
             }
             else {
                 pbrMetallicRoughness.baseColorTexture = {
-                    index: textureId
+                    index: textureId++
                 };
-                textureModel['id'] = textureId++;
-                globalTextures.push(textureModel);
+                // todo search by textureModel
+                // textureModel['id'] = textureId++;
+                decodeOSGTexture(textureModel);
             }
         }
         else {
@@ -13580,7 +13583,11 @@ function decodeOSGJSStateSet(stateSet) {
                     emissiveFactor = [...color.map((c) => c * factor)];
                 }
                 else {
-                    debugger;
+                    emissiveTexture = {
+                        index: textureId++
+                    };
+                    // textureModel['id'] = textureId++;
+                    decodeOSGTexture(textureModel);
                 }
             }
             else if (displayName == "Specular F0") {
@@ -13594,6 +13601,9 @@ function decodeOSGJSStateSet(stateSet) {
     Object.assign(attr, { pbrMetallicRoughness });
     if (emissiveFactor && JSON.stringify(emissiveFactor) != '[0,0,0]') {
         Object.assign(attr, { emissiveFactor });
+    }
+    else if (emissiveTexture) {
+        Object.assign(attr, { emissiveTexture });
     }
     return attr;
 }
@@ -13757,6 +13767,43 @@ function decodeBufferView(byteArray, type) {
     });
     globalBufferViews.push(bufferView);
     return bufferViewId;
+}
+function decodeOSGTexture(textureModel) {
+    let { attributes } = textureModel;
+    let { image, magFilter, minFilter, wrapS, wrapT } = attributes;
+    let { name } = image.attributes;
+    let uri = Object.create({});
+    Object.assign(uri, {
+        uri: name.replace("_TXTR.tga", "")
+    });
+    let texture = Object.create({});
+    let sampler = Object.create({});
+    Object.assign(sampler, {
+        magFilter, minFilter, wrapS, wrapT
+    });
+    let hasSampler = hasSameObjact(globalSamplers, sampler);
+    let hasImage = hasSameObjact(globalImages, uri);
+    if (!hasSampler) {
+        globalSamplers.push(sampler);
+    }
+    if (!hasImage) {
+        globalImages.push(uri);
+    }
+    let samplerId = findSameObjact(globalSamplers, sampler);
+    let uriId = findSameObjact(globalImages, uri);
+    if (!hasSampler || !hasImage) {
+        Object.assign(texture, {
+            sampler: samplerId,
+            source: uriId,
+        });
+        globalTextures.push(texture);
+    }
+}
+function hasSameObjact(arr, obj) {
+    return arr.find((object) => JSON.stringify(object) == JSON.stringify(obj));
+}
+function findSameObjact(arr, obj) {
+    return arr.findIndex((object) => JSON.stringify(object) == JSON.stringify(obj));
 }
 function main() {
     decodeOSGRoot(osg);

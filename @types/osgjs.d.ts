@@ -122,10 +122,13 @@ declare module OSGJS {
     attributes:{
       image:{
         attributes:{
-          name:string,
-          images:any[]
+          name:string
         }
-      }
+      },
+      magFilter:number,
+      minFilter:number,
+      wrapS:number,
+      wrapT:number,
     }
   }
 
