@@ -114,6 +114,7 @@ declare module OSGJS {
     color?:Float32Array;
     textureModel?:ITextureModel,
     factor:number,
+    displayName:string,
     name:string;//"AlbedoPBR" | "MetalnessPBR" | "GlossinessPBR" | "EmitColor" | "SpecularF0"
   }
 

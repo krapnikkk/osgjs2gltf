@@ -1,5 +1,3 @@
-"use strict";
-exports.__esModule = true;
 var PRIMITIVE_TABLE = {
     "POINTS": 0,
     "LINES": 1,
@@ -9,7 +7,7 @@ var PRIMITIVE_TABLE = {
     "TRIANGLE_STRIP": 5,
     "TRIANGLE_FAN": 6
 };
-var TYPE_TABLE = {
+let TYPE_TABLE = {
     1: "SCALAR",
     2: "VEC2",
     3: "VEC3",
@@ -18,21 +16,21 @@ var TYPE_TABLE = {
     6: "MAT3",
     7: "MAT4"
 };
-var TARGET_TABLE = {
+let TARGET_TABLE = {
     "ARRAY_BUFFER": 34962,
     "ELEMENT_ARRAY_BUFFER": 34963
 };
-var CLASS_TABLE = {
+let CLASS_TABLE = {
     "Uint8Array": Uint8Array,
     "Uint16Array": Uint16Array,
     "Uint32Array": Uint32Array
 };
-var INDICES_COMPONENT_TYPE_TABE = {
+let INDICES_COMPONENT_TYPE_TABE = {
     "DrawElementsUByte": 5121,
     "DrawElementsUShort": 5123,
     "DrawElementsUInt": 5125
 };
-var COMPONENT_TYPE_TABE = {
+let COMPONENT_TYPE_TABE = {
     "BYTE": 5120,
     "UNSIGNED_BYTE": 5121,
     "SHORT": 5122,
@@ -40,7 +38,7 @@ var COMPONENT_TYPE_TABE = {
     "UNSIGNED_INT": 5125,
     "FLOAT": 5126
 };
-var ATTRIBUTE_TABLE = {
+let ATTRIBUTE_TABLE = {
     'Vertex': 'POSITION',
     'Normal': 'NORMAL',
     'Tangent': 'TANGENT',
@@ -64,11 +62,11 @@ var ATTRIBUTE_TABLE = {
     'Bones': 'JOINTS_0',
     'Weights': 'WEIGHTS_0'
 };
-var gltf = {
+let gltf = {
     accessors: [],
     asset: {
         generator: "gltf-creator",
-        version: "2.0"
+        version: "2.0",
     },
     buffers: [],
     bufferViews: [],
@@ -85,9 +83,9 @@ var gltf = {
             "nodes": []
         }
     ],
-    textures: []
+    textures: [],
 };
-var osg = {
+let osg = {
     "Generator": "OpenSceneGraph 3.5.6",
     "Version": 9,
     "osg.Node": {
@@ -13370,24 +13368,25 @@ var osg = {
         ]
     }
 };
-var nodeMap = {
+let nodeMap = {
     "osg.Node": [],
     "osg.MatrixTransform": [],
-    "osg.Geometry": []
+    "osg.Geometry": [],
 };
-var globalNodes = [], gltfNodes = [], nodeId = 1;
-var globalAccessors = [], accessorId = 0;
-var globalMeshes = [], meshId = 0;
-var globalMaterials = [], materialId = 0;
-var globalBufferViews = [], bufferViewId = 0;
+let globalNodes = [], gltfNodes = [], nodeId = 1;
+let globalAccessors = [], accessorId = 0;
+let globalMeshes = [], meshId = 0;
+let globalMaterials = [], materialId = 0;
+let globalBufferViews = [], bufferViewId = 0;
+let globalTextures = [], textureId = 0;
 function decodeUint8Array(e) {
-    var i = "";
+    let i = "";
     for (var n = new Uint8Array(e), r = 0; r < e.length; r += 65535)
         i += String.fromCharCode.apply(null, n.slice(r, r + 65535));
     return i;
 }
 function decodeFileBinz(file) {
-    var txt = decodeUint8Array(file);
+    let txt = decodeUint8Array(file);
     return JSON.parse(txt);
 }
 function decodeOSGRoot(root) {
@@ -13401,15 +13400,15 @@ function decodeOSGRoot(root) {
     splitChilren(root["osg.Node"].Children);
 }
 function splitChilren(nodes) {
-    nodes.forEach(function (item) {
-        for (var key in item) {
-            var element = item[key];
-            var elementStr = JSON.stringify(element);
-            var hasWireframe = key == "osg.Geometry" && elementStr.indexOf("model_file_wireframe") !== -1;
+    nodes.forEach((item) => {
+        for (let key in item) {
+            let element = item[key];
+            let elementStr = JSON.stringify(element);
+            let hasWireframe = key == "osg.Geometry" && elementStr.indexOf("model_file_wireframe") !== -1;
             if (hasWireframe)
                 continue;
-            var isWireframeNode = false;
-            var child = element.Children && element.Children[0] && element.Children[0]["osg.Node"];
+            let isWireframeNode = false;
+            let child = element.Children && element.Children[0] && element.Children[0]["osg.Node"];
             if (child) {
                 if (child.Name == element.Name) {
                     isWireframeNode = true;
@@ -13430,27 +13429,27 @@ function splitChilren(nodes) {
     });
 }
 function decodeOSGNode(nodes) {
-    nodes.forEach(function (node) {
+    nodes.forEach((node) => {
         gltfNodes.push(generateGltfNode(node));
     });
 }
 function generateGltfNode(node) {
-    var Name = node.Name, type = node.type, Children = node.Children;
-    var children = Children ? getNodeChildren(Object.values(Children)) : null;
-    var obj = { name: Name };
+    let { Name, type, Children } = node;
+    let children = Children ? getNodeChildren(Object.values(Children)) : null;
+    let obj = { name: Name };
     if (!Name) {
         debugger;
     }
     if (children) {
-        Object.assign(obj, { children: children });
+        Object.assign(obj, { children });
     }
     switch (type) {
         case "osg.Node" /* OSG.ENode.Node */:
             break;
         case "osg.MatrixTransform" /* OSG.ENode.MatrixTransform */:
-            var Matrix = node.Matrix;
+            let { Matrix } = node;
             if (Matrix) {
-                Object.assign(obj, { Matrix: Matrix });
+                Object.assign(obj, { Matrix });
             }
             break;
         case "osg.Geometry" /* OSG.ENode.Geometry */:
@@ -13464,14 +13463,14 @@ function generateGltfNode(node) {
     return obj;
 }
 function decodeOSGGeometries(nodes) {
-    nodes.forEach(function (node) {
+    nodes.forEach((node) => {
         generateGltfMesh(node);
     });
 }
 function getNodeChildren(nodes) {
-    var ids = [];
-    nodes.forEach(function (node) {
-        var id = Object.values(node)[0].nodeId;
+    let ids = [];
+    nodes.forEach((node) => {
+        let id = Object.values(node)[0].nodeId;
         if (typeof id != "undefined") {
             ids.push(id);
         }
@@ -13479,25 +13478,25 @@ function getNodeChildren(nodes) {
     return ids;
 }
 function generateGltfMesh(node) {
-    var PrimitiveSetList = node.PrimitiveSetList, StateSet = node.StateSet, UserDataContainer = node.UserDataContainer, VertexAttributeList = node.VertexAttributeList, Name = node.Name;
+    let { PrimitiveSetList, StateSet, UserDataContainer, VertexAttributeList, Name } = node;
     if (!Name) {
         debugger;
     }
-    var primitives = [];
-    var mesh = {
+    let primitives = [];
+    let mesh = {
         name: Name,
-        primitives: primitives
+        primitives
     };
-    var primitive = Object.create({});
+    let primitive = Object.create({});
     primitives.push(primitive);
     if (VertexAttributeList) { //accessors -> attributes
-        var attributes = decodeOSGVertexAttribute(VertexAttributeList, Name);
+        let attributes = decodeOSGVertexAttribute(VertexAttributeList, Name);
         if (attributes) {
             primitive.attributes = attributes;
         }
     }
     if (PrimitiveSetList) { //accessors ->primitives[indices]
-        var primitiveArr = decodeOSGPrimitiveSet(PrimitiveSetList);
+        let primitiveArr = decodeOSGPrimitiveSet(PrimitiveSetList);
         if (primitiveArr.length > 1) {
             debugger;
         }
@@ -13505,7 +13504,7 @@ function generateGltfMesh(node) {
         Object.assign(primitive, primitiveArr[0]);
     }
     if (StateSet) { // material
-        var hasMaterial = decodeOSGStateSet(StateSet['osg.StateSet']);
+        let hasMaterial = decodeOSGStateSet(StateSet['osg.StateSet']);
         if (hasMaterial) {
             Object.assign(primitive, { material: materialId++ });
         }
@@ -13513,22 +13512,28 @@ function generateGltfMesh(node) {
     globalMeshes.push(mesh);
 }
 function decodeOSGStateSet(stateSet) {
-    var flag = false;
-    var AttributeList = stateSet.AttributeList, TextureAttributeList = stateSet.TextureAttributeList;
+    let flag = false;
+    let { AttributeList, TextureAttributeList } = stateSet;
     if (AttributeList) {
-        AttributeList.forEach(function (attribute) {
-            var material = attribute['osg.Material'];
-            var Name = material.Name;
-            var state = findMaterialFromRoot(Name, _root_);
+        AttributeList.forEach((attribute) => {
+            let material = attribute['osg.Material'];
+            let { Name } = material;
+            let mtl = Object.create({});
+            Object.assign(mtl, {
+                name: Name,
+                doubleSided: true
+            });
+            let state = findMaterialFromRoot(Name, _root_);
             if (state) {
-                decodeOSGJSStateSet(state);
+                let arrtibute = decodeOSGJSStateSet(state);
+                Object.assign(mtl, arrtibute);
             }
             else {
                 debugger;
             }
             flag = true;
             stateSet.materialId = materialId;
-            globalMaterials.push(material);
+            globalMaterials.push(mtl);
         });
     }
     if (TextureAttributeList) {
@@ -13537,31 +13542,66 @@ function decodeOSGStateSet(stateSet) {
     return flag;
 }
 function decodeOSGJSStateSet(stateSet) {
-    var _attributeArray = stateSet._attributeArray;
-    var attribute = _attributeArray[0];
-    var _object = attribute._object;
-    var _activeChannels = _object._activeChannels;
+    let { _attributeArray } = stateSet;
+    let attribute = _attributeArray[0];
+    let { _object } = attribute;
+    let { _activeChannels } = _object;
     if (_activeChannels.length > 5) {
         debugger;
     }
     ;
     // 0->baseColor 1 -> metalness 2-> glossness/roughness 3->emission  4->specularF0
-    _activeChannels.forEach(function (channel) {
-        var attributes = channel.attributes;
-        var name = attributes.name, color = attributes.color, factor = attributes.factor, textureModel = attributes.textureModel;
-        if (name == "Base Color") {
+    let pbrMetallicRoughness = Object.create({});
+    let emissiveFactor;
+    _activeChannels.forEach((channel) => {
+        let { attributes } = channel;
+        let { color, factor, textureModel, displayName } = attributes;
+        if (displayName == "Base Color") {
             if (color) {
+                pbrMetallicRoughness.baseColorFactor = [...color.map((c) => c * factor), 1.0];
+            }
+            else {
+                pbrMetallicRoughness.baseColorTexture = {
+                    index: textureId
+                };
+                textureModel['id'] = textureId++;
+                globalTextures.push(textureModel);
             }
         }
         else {
+            if (displayName == "Metalness") {
+                pbrMetallicRoughness.metallicFactor = factor;
+            }
+            else if (displayName == "Glossiness") {
+                pbrMetallicRoughness.roughnessFactor = 1 - factor;
+            }
+            else if (displayName == "Emission") {
+                if (color) {
+                    emissiveFactor = [...color.map((c) => c * factor)];
+                }
+                else {
+                    debugger;
+                }
+            }
+            else if (displayName == "Specular F0") {
+            }
+            else {
+                debugger;
+            }
         }
     });
+    let attr = Object.create({});
+    Object.assign(attr, { pbrMetallicRoughness });
+    if (emissiveFactor && JSON.stringify(emissiveFactor) != '[0,0,0]') {
+        Object.assign(attr, { emissiveFactor });
+    }
+    return attr;
 }
 function findMaterialFromRoot(name, node) {
-    var children = node.children;
-    var stateSet;
-    for (var i = 0; i < children.length; i++) {
-        var child = children[i];
+    let { children } = node;
+    let stateSet;
+    for (let i = 0; i < children.length; i++) {
+        let child = children[i];
         stateSet = getMaterialFromOSGJS(name, child);
         if (!stateSet) {
             stateSet = findMaterialFromRoot(name, child);
@@ -13573,10 +13613,10 @@ function findMaterialFromRoot(name, node) {
     return stateSet;
 }
 function getMaterialFromOSGJS(name, node) {
-    var res;
-    var stateset = node.stateset;
+    let res;
+    let { stateset } = node;
     if (stateset) {
-        var _name = stateset._name;
+        let { _name } = stateset;
         if (_name == name && node._name == name) { // todo maybe find all
             res = stateset;
         }
@@ -13584,10 +13624,10 @@ function getMaterialFromOSGJS(name, node) {
     return res;
 }
 function findGeometryFromRoot(name, node, key) {
-    var children = node.children;
-    var geometry;
-    for (var i = 0; i < children.length; i++) {
-        var child = children[i];
+    let { children } = node;
+    let geometry;
+    for (let i = 0; i < children.length; i++) {
+        let child = children[i];
         geometry = getGeometryFromOSGJS(name, child, key);
         if (!geometry) {
             geometry = findGeometryFromRoot(name, child, key);
@@ -13599,43 +13639,43 @@ function findGeometryFromRoot(name, node, key) {
     return geometry;
 }
 function getGeometryFromOSGJS(name, node, key) {
-    var res;
+    let res;
     if (node.className() == 'Geometry' && node._name == name) { // todo maybe find all
-        if (node['getAttributes']()[key] || node['getAttributes']()["_".concat(key.replace("TexCoord", ""))]) {
+        if (node['getAttributes']()[key] || node['getAttributes']()[`_${key.replace("TexCoord", "")}`]) {
             res = node;
         }
     }
     return res;
 }
 function decodeOSGPrimitiveSet(primitiveSetList) {
-    var primitives = [];
-    primitiveSetList.forEach(function (primitiveSet) {
-        for (var key in primitiveSet) {
-            var primitive = primitiveSet[key];
+    let primitives = [];
+    primitiveSetList.forEach((primitiveSet) => {
+        for (let key in primitiveSet) {
+            let primitive = primitiveSet[key];
             // globalPrimitiveSetList.push(primitive);
-            var gltfPrimitive = {};
-            var Indices = primitive.Indices, Mode = primitive.Mode;
-            var mode = PRIMITIVE_TABLE[Mode];
-            var accessor = decodeOSGIndice(Indices, key);
+            let gltfPrimitive = {};
+            let { Indices, Mode } = primitive;
+            let mode = PRIMITIVE_TABLE[Mode];
+            let accessor = decodeOSGIndice(Indices, key);
             accessor.accessorId = accessorId++;
             globalAccessors.push(accessor);
-            Object.assign(gltfPrimitive, { mode: mode, indices: accessorId });
+            Object.assign(gltfPrimitive, { mode, indices: accessorId });
             primitives.push(gltfPrimitive);
         }
     });
     return primitives;
 }
 function decodeOSGVertexAttribute(vertextAttribute, Name) {
-    var attributes = {};
-    for (var key in vertextAttribute) {
-        var attribute = vertextAttribute[key];
+    let attributes = {};
+    for (let key in vertextAttribute) {
+        let attribute = vertextAttribute[key];
         delete attribute.UniqueID;
         if (JSON.stringify(attribute) === "{}") {
             continue;
         }
-        var type = ATTRIBUTE_TABLE[key];
+        let type = ATTRIBUTE_TABLE[key];
         attribute.accessorId = accessorId++;
-        var accessor = decodeOSGAttribute(attribute, Name, key);
+        let accessor = decodeOSGAttribute(attribute, Name, key);
         if (accessor) {
             accessor.accessorId = accessorId++;
             globalAccessors.push(accessor);
@@ -13649,37 +13689,37 @@ function decodeOSGVertexAttribute(vertextAttribute, Name) {
 }
 // primitive.attributes
 function decodeOSGAttribute(attribute, Name, key) {
-    var accessor = Object.create({});
-    var geometry = findGeometryFromRoot(Name, _root_, key);
+    let accessor = Object.create({});
+    let geometry = findGeometryFromRoot(Name, _root_, key);
     if (!geometry) {
         return;
     }
-    var _attributes = geometry._attributes;
-    var _attribute = _attributes[key] || _attributes["_".concat(key.replace("TexCoord", ""))];
-    var _minMax = _attribute._minMax, _type = _attribute._type;
-    var Array = attribute.Array, ItemSize = attribute.ItemSize, Type = attribute.Type; // bufferViews
-    var byteArray = Object.values(Array)[0];
-    var Size = byteArray.Size, Offset = byteArray.Offset;
-    var type = TYPE_TABLE[ItemSize];
-    var bufferView = decodeBufferView(byteArray, Type);
+    let { _attributes } = geometry;
+    let _attribute = _attributes[key] || _attributes[`_${key.replace("TexCoord", "")}`];
+    let { _minMax, _type } = _attribute;
+    let { Array, ItemSize, Type } = attribute; // bufferViews
+    let byteArray = Object.values(Array)[0];
+    let { Size, Offset } = byteArray;
+    let type = TYPE_TABLE[ItemSize];
+    let bufferView = decodeBufferView(byteArray, Type);
     if (_minMax) {
         Object.assign(accessor, {
-            bufferView: bufferView,
+            bufferView,
             componentType: _type,
             byteOffset: Offset,
             count: Size,
             max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
             mim: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
-            type: type
+            type,
         });
     }
     else {
         Object.assign(accessor, {
-            bufferView: bufferView,
+            bufferView,
             componentType: _type,
             byteOffset: Offset,
             count: Size,
-            type: type
+            type,
         });
     }
     bufferViewId++;
@@ -13687,26 +13727,26 @@ function decodeOSGAttribute(attribute, Name, key) {
 }
 // primitive.indices
 function decodeOSGIndice(indices, uType) {
-    var accessor = Object.create({});
-    var Array = indices.Array, ItemSize = indices.ItemSize, Type = indices.Type; // bufferViews
-    var type = TYPE_TABLE[ItemSize];
-    var componentType = INDICES_COMPONENT_TYPE_TABE[uType];
-    var byteArray = Object.values(Array)[0];
-    var Size = byteArray.Size, Offset = byteArray.Offset;
-    var bufferView = decodeBufferView(byteArray, Type);
+    let accessor = Object.create({});
+    let { Array, ItemSize, Type } = indices; // bufferViews
+    let type = TYPE_TABLE[ItemSize];
+    let componentType = INDICES_COMPONENT_TYPE_TABE[uType];
+    let byteArray = Object.values(Array)[0];
+    let { Size, Offset } = byteArray;
+    let bufferView = decodeBufferView(byteArray, Type);
     Object.assign(accessor, {
-        bufferView: bufferView,
+        bufferView,
         byteOffset: Offset,
-        componentType: componentType,
+        componentType,
         count: Size,
-        type: type
+        type,
     });
     bufferViewId++;
     return accessor;
 }
 function decodeBufferView(byteArray, type) {
-    var bufferView = Object.create({});
-    var Size = byteArray.Size, Offset = byteArray.Offset;
+    let bufferView = Object.create({});
+    let { Size, Offset } = byteArray;
     Object.assign(bufferView, {
         "buffer": 0,
         "byteLength": Size,

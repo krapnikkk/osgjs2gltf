@@ -13386,7 +13386,7 @@ let globalAccessors = [], accessorId = 0;
 let globalMeshes = [], meshId = 0;
 let globalMaterials = [], materialId = 0;
 let globalBufferViews = [], bufferViewId = 0;
-let globalTextures, textureId = 0;
+let globalTextures = [], textureId = 0;
 
 function decodeUint8Array(e: Uint8Array): string {
     let i = "";
@@ -13537,15 +13537,21 @@ function decodeOSGStateSet(stateSet: OSG.StateSet): boolean {
         AttributeList.forEach((attribute) => {
             let material = attribute['osg.Material'];
             let { Name } = material;
+            let mtl = Object.create({});
+            Object.assign(mtl, {
+                name: Name,
+                doubleSided: true
+            })
             let state = findMaterialFromRoot(Name, _root_);
             if (state) {
-                decodeOSGJSStateSet(state);
+                let arrtibute = decodeOSGJSStateSet(state);
+                Object.assign(mtl, arrtibute);
             } else {
                 debugger
             }
             flag = true;
             stateSet.materialId = materialId;
-            globalMaterials.push(material);
+            globalMaterials.push(mtl);
         })
     }
     if (TextureAttributeList) {
@@ -13562,24 +13568,44 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
     if (_activeChannels.length > 5) { debugger };
     // 0->baseColor 1 -> metalness 2-> glossness/roughness 3->emission  4->specularF0
     let pbrMetallicRoughness = Object.create({});
+    let emissiveFactor;
     _activeChannels.forEach((channel) => {
         let { attributes } = channel;
-        let { name, color, factor, textureModel, displayName } = attributes;
-        if (name == "Base Color") {
+        let { color, factor, textureModel, displayName } = attributes;
+        if (displayName == "Base Color") {
             if (color) {
-                pbrMetallicRoughness.baseColorFactor = [...color, 1.0];
+                pbrMetallicRoughness.baseColorFactor = [...color.map((c) => c * factor), 1.0];
             } else {
                 pbrMetallicRoughness.baseColorTexture = {
                     index: textureId
                 };
                 textureModel['id'] = textureId++;
-                globalTextures.psuh(textureModel);
+                globalTextures.push(textureModel);
             }
         } else {
+            if (displayName == "Metalness") {
+                pbrMetallicRoughness.metallicFactor = factor;
+            } else if (displayName == "Glossiness") {
+                pbrMetallicRoughness.roughnessFactor = 1 - factor;
+            } else if (displayName == "Emission") {
+                if (color) {
+                    emissiveFactor = [...color.map((c) => c * factor)];
+                } else {
+                    debugger;
+                }
+            } else if (displayName == "Specular F0") {
 
+            } else {
+                debugger;
+            }
         }
     })
-
+    let attr = Object.create({});
+    Object.assign(attr, { pbrMetallicRoughness });
+    if (emissiveFactor && JSON.stringify(emissiveFactor) != '[0,0,0]') {
+        Object.assign(attr, { emissiveFactor });
+    }
+    return attr;
 }
 
 

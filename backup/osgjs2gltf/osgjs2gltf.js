@@ -1,5 +1,3 @@
-"use strict";
-exports.__esModule = true;
 var primitiveSet = {
     "POINTS": 0,
     "LINES": 1,
@@ -46,7 +44,7 @@ var gltf = {
     accessors: [],
     asset: {
         generator: "gltf-creator",
-        version: "2.0"
+        version: "2.0",
     },
     buffers: [],
     bufferViews: [],
@@ -63,46 +61,45 @@ var gltf = {
             "nodes": []
         }
     ],
-    textures: []
+    textures: [],
 };
-var nodes = [], nodeId = 1000;
-var scenes = [];
-var meshId = 0, meshes = [];
-var materials = [], materialIdx = 0;
-var meshMap = {};
-var accessors = [], accessorId = 0; // accessors[indices,attributes]
-var bufferViews = [], bufferId = 0;
+let nodes = [], nodeId = 1000;
+let scenes = [];
+let meshId = 0, meshes = [];
+let materials = [], materialIdx = 0;
+let meshMap = {};
+let accessors = [], accessorId = 0; // accessors[indices,attributes]
+let bufferViews = [], bufferId = 0;
 function decodeScene(node) {
-    node.children[0].children.forEach(function (child) {
-        var name = child._name;
+    node.children[0].children.forEach((child) => {
+        let name = child._name;
         if (name)
             name = child._name.replace("_", "");
         scenes.push(+name || 0);
     });
 }
-function decodeNode(rootNodes, names) {
-    if (names === void 0) { names = []; }
-    for (var i = 0; i < rootNodes.length; i++) {
-        var child = rootNodes[i];
-        var clz = child.className();
-        var _name = child._name, children = child.children;
+function decodeNode(rootNodes, names = []) {
+    for (let i = 0; i < rootNodes.length; i++) {
+        let child = rootNodes[i];
+        let clz = child.className();
+        let { _name, children } = child;
         if (clz == "Geometry") {
             continue;
         }
         if (names.length > 0) {
-            _name = "".concat(names[i]);
+            _name = `${names[i]}`;
         }
         if (typeof _name == "undefined") {
-            _name = "".concat(++nodeId);
+            _name = `${++nodeId}`;
         }
-        var node = Object.create({});
+        let node = Object.create({});
         if (children.length > 0) {
             decodeNode(children);
-            var childIdArr = [];
-            for (var j = 0; j < children.length; j++) {
-                var nodeChild = children[j];
-                var id = +parseNodeName(nodeChild._name);
-                var nodeClz = nodeChild.className();
+            let childIdArr = [];
+            for (let j = 0; j < children.length; j++) {
+                let nodeChild = children[j];
+                let id = +parseNodeName(nodeChild._name);
+                let nodeClz = nodeChild.className();
                 if (typeof nodeChild._name != "undefined" &&
                     nodeClz == "Geometry" &&
                     (Number.isNaN(id) || id >= nodeId)) {
@@ -127,7 +124,7 @@ function decodeNode(rootNodes, names) {
                 node.children = childIdArr;
         }
         if (child['matrix']) {
-            node['matrix'] = JSON.parse("[".concat(child['matrix'].toString(), "]"));
+            node['matrix'] = JSON.parse(`[${child['matrix'].toString()}]`);
         }
         if (_name) {
             node.name = _name;
@@ -153,24 +150,24 @@ function parseNodeName(_name) {
     }
 }
 function decodeMesh(node) {
-    var _attributes = node._attributes, _primitives = node._primitives, _cacheVertexAttributeBufferList = node._cacheVertexAttributeBufferList, _name = node._name, stateset = node.stateset;
-    var mesh = meshMap[_name];
+    let { _attributes, _primitives, _cacheVertexAttributeBufferList, _name, stateset } = node;
+    let mesh = meshMap[_name];
     if (!mesh) {
         mesh = meshMap[_name] = [];
     }
-    var primitive = Object.create({});
+    let primitive = Object.create({});
     if (_primitives) { //primitives
-        var attributes = [];
+        let attributes = [];
         primitive.attributes = attributes;
         if (_primitives.length > 1) {
             debugger;
         }
         ;
-        var _a = _primitives[0], mode = _a.mode, indices = _a.indices, uType = _a.uType, count = _a.count;
+        let { mode, indices, uType, count } = _primitives[0];
         // indices
         if (isUndefined(indices['accessorId'])) {
             indices['accessorId'] = accessorId++;
-            var _elements = indices._elements, _itemSize = indices._itemSize;
+            let { _elements, _itemSize } = indices;
             if (isUndefined(_elements['bufferId'])) {
                 _elements['bufferId'] = bufferId++;
             }
@@ -190,12 +187,12 @@ function decodeMesh(node) {
         }
         //attributes
         if (_attributes) {
-            for (var key in _attributes) {
-                var attributeName = ATTRIBUTE_TABLE[key];
-                var attr = _attributes[key];
+            for (let key in _attributes) {
+                let attributeName = ATTRIBUTE_TABLE[key];
+                let attr = _attributes[key];
                 if (isUndefined(attr['accessorId'])) {
                     attr['accessorId'] = accessorId++;
-                    var _elements = attr._elements, _itemSize = attr._itemSize, _type = attr._type;
+                    let { _elements, _itemSize, _type } = attr;
                     if (isUndefined(_elements['bufferId'])) {
                         _elements['bufferId'] = bufferId++;
                     }
@@ -210,7 +207,7 @@ function decodeMesh(node) {
                         count: _elements.length / _itemSize,
                         min: getMax(_elements, _itemSize, false),
                         max: getMax(_elements, _itemSize),
-                        type: TYPE_TABLE[_itemSize]
+                        type: TYPE_TABLE[_itemSize],
                     });
                 }
                 attributes.push({
@@ -248,12 +245,11 @@ function decodeMesh(node) {
 function isUndefined(attr) {
     return typeof attr == 'undefined';
 }
-function getMax(arr, interval, max) {
-    if (max === void 0) { max = true; }
-    var source = new Array(interval).fill(max ? Number.MIN_SAFE_INTEGER : Number.MAX_SAFE_INTEGER);
-    for (var i = 0; i < arr.length; i++) {
-        var item = arr[i];
-        var idx = i % interval;
+function getMax(arr, interval, max = true) {
+    let source = new Array(interval).fill(max ? Number.MIN_SAFE_INTEGER : Number.MAX_SAFE_INTEGER);
+    for (let i = 0; i < arr.length; i++) {
+        let item = arr[i];
+        let idx = i % interval;
         source[idx] = max ? Math.max(item, source[idx]) : Math.min(item, source[idx]);
     }
     ;
@@ -262,7 +258,8 @@ function getMax(arr, interval, max) {
 function decodeOSGJS(root) {
     decodeScene(root);
     decodeNode(root.children, scenes);
-    meshes.forEach(function (mesh) {
+    meshes.forEach((mesh) => {
         decodeMesh(mesh);
     });
 }
+export {};
