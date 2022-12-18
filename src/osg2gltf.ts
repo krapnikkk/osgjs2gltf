@@ -13733,9 +13733,8 @@ function decodeOSGAttribute(attribute: OSG.VertexAttribute, Name: string, key: O
     let byteArray = Object.values(Array)[0];
     let { Size, Offset } = byteArray;
     let type = TYPE_TABLE[ItemSize];
-    let {byteLength,} = _elements;
-    let byteStride = byteLength/Size;
-    let bufferView = decodeBufferView(byteArray, Type);
+    debugger
+    let bufferView = decodeBufferView(byteArray,_elements, Type);
     if (_minMax) {
         Object.assign(accessor, {
             bufferView,
@@ -13768,21 +13767,24 @@ function decodeOSGIndice(indices: OSG.IIndices, uType: OSG.DrawElementsType) {
     let componentType = INDICES_COMPONENT_TYPE_TABE[uType];
     let byteArray = Object.values(Array)[0];
     let { Size, Offset } = byteArray;
-    let bufferView = decodeBufferView(byteArray, Type);
-    Object.assign(accessor, {
-        bufferView,
-        byteOffset: Offset,
-        componentType,
-        count: Size,
-        type,
-    });
+    debugger;
+    // // let bufferView = decodeBufferView(byteArray, Type);
+    // Object.assign(accessor, {
+    //     bufferView,
+    //     byteOffset: Offset,
+    //     componentType,
+    //     count: Size,
+    //     type,
+    // });
     bufferViewId++;
     return accessor;
 }
 
-function decodeBufferView(byteArray: OSG.IByteArray, type: OSG.AttributeType): number {
+function decodeBufferView(byteArray: OSG.IByteArray,data:ArrayBuffer, type: OSG.AttributeType): number {
     let bufferView = Object.create({});
+    let {byteLength} = data;
     let { Size, Offset } = byteArray;
+    let byteStride = byteLength/Size;
     debugger;
     Object.assign(bufferView, {
         "buffer": 0,
