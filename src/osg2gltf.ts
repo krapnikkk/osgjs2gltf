@@ -26,12 +26,6 @@ let TARGET_TABLE = {
     "ELEMENT_ARRAY_BUFFER": 34963
 }
 
-let CLASS_TABLE = {
-    "Uint8Array": Uint8Array,
-    "Uint16Array": Uint16Array,
-    "Uint32Array": Uint32Array
-}
-
 let INDICES_COMPONENT_TYPE_TABE = {
     "DrawElementsUByte": 5121,
     "DrawElementsUShort": 5123,
