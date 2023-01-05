@@ -100,10 +100,10 @@ function decodeOSGRoot(root: OSG.Root) {
         ],
         "name": "Sketchfab_model"
     })
-    splitChilren(root["osg.Node"].Children)
+    splitChildren(root["osg.Node"].Children)
 }
 
-function splitChilren(nodes: OSG.NodeMap[]) {
+function splitChildren(nodes: OSG.NodeMap[]) {
     nodes.forEach((item) => {
         for (let key in item) {
             let element = item[<OSG.NodeNameType>key];
@@ -111,23 +111,23 @@ function splitChilren(nodes: OSG.NodeMap[]) {
             let hasWireframe = key == "osg.Geometry" && elementStr.indexOf("model_file_wireframe") !== -1;
             if (hasWireframe) continue;
             let isWireframeNode = false;
-            let child = element.Children && element.Children[0] && element.Children[0]["osg.Node"];
-            if (child) {
-                // if (child.Name == element.Name) {
-                //     isWireframeNode = true;
-                // }
+            if (element.Children && element.Children[0] && element.Children[0]["osg.Node"]) {
+                let child = element.Children[0]["osg.Node"]
+                if (child.Name == element.Name && key == "osg.MatrixTransform" ) {
+                    isWireframeNode = true;
+                }
             }
             if (typeof element.nodeId == "undefined" && !isWireframeNode) {
                 element.nodeId = nodeId++;
                 element.type = key;
             }
-
+            
             if (globalNodes.indexOf(element) == -1 && !isWireframeNode) {
                 globalNodes.push(element);
                 nodeMap[key].push(element);
             }
             if (element.Children) {
-                splitChilren(element.Children);
+                splitChildren(element.Children);
             }
         }
     })
@@ -141,14 +141,8 @@ function decodeOSGNode(nodes: OSG.Node[]) {
 
 function generateGltfNode(node: OSG.NodeType) {
     let { Name, type, Children } = node;
-    if(Name == "RootNode"){
-        debugger;
-    }
     let children = Children ? getNodeChildren(Object.values(Children)) : null;
     let obj = { name: Name };
-    if (!Name) {
-        debugger;
-    }
     if (children) {
         Object.assign(obj, { children });
     }
@@ -181,7 +175,8 @@ function decodeOSGGeometries(nodes: OSG.Geometry[]) {
 function getNodeChildren(nodes: OSG.NodeMap[]): number[] {
     let ids = [];
     nodes.forEach((node) => {
-        let id = Object.values(node)[0].nodeId;
+        let child = Object.values(node)[0];
+        let id = child.nodeId||child.Children && Object.values(child.Children[0])[0].nodeId;
         if (typeof id != "undefined") {
             ids.push(id);
         }
@@ -190,7 +185,7 @@ function getNodeChildren(nodes: OSG.NodeMap[]): number[] {
 }
 
 function generateGltfMesh(node: OSG.Geometry) {
-    let { PrimitiveSetList, StateSet, UserDataContainer, VertexAttributeList, Name } = node;
+    let { PrimitiveSetList, StateSet, VertexAttributeList, Name } = node;
     if (!Name) {
         debugger;
     }
@@ -291,7 +286,14 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
                 1 - factor !== 1 ? pbrMetallicRoughness.roughnessFactor = 1 - factor : null;
             } else if (displayName == "Emission") {
                 if (color) {
-                    emissiveFactor = [...color.map((c) => c * factor)];
+                    emissiveFactor = [...color.map((c) => {
+                        let res = c * factor;
+                        if(res<1){
+                            return res;
+                        }else{
+                            return 0;
+                        }
+                    })];
                 }
                 if (emissiveTexture) {
                     emissiveTexture = {
