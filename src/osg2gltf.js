@@ -16,6 +16,17 @@ let TYPE_TABLE = {
     6: "MAT3",
     7: "MAT4"
 };
+let TYPED_ARRAY = {
+    "Float32Array": Float32Array,
+    "Float64Array": Float64Array,
+    "Int8Array": Int8Array,
+    "Int16Array": Int16Array,
+    "Int32Array": Int32Array,
+    "Uint8Array": Uint8Array,
+    "Uint16Array": Uint16Array,
+    "Uint32Array": Uint32Array,
+    "Uint8ClampedArray": Uint8ClampedArray
+};
 let TARGET_TABLE = {
     "ARRAY_BUFFER": 34962,
     "ELEMENT_ARRAY_BUFFER": 34963
@@ -180,7 +191,7 @@ function generateGltfMesh(node) {
             debugger;
         }
         let attributes = decodeOSGVertexAttribute(VertexAttributeList, Name);
-        if (attributes) {
+        if (attributes && JSON.stringify(attributes) != "{}") {
             primitive.attributes = attributes;
         }
     }
@@ -554,4 +565,3 @@ function main() {
     exportFile("scene.gltf", JSON.stringify(gltf, null, 4));
 }
 main();
-export {};
