@@ -113,7 +113,7 @@ function splitChildren(nodes: OSG.NodeMap[]) {
             let isWireframeNode = false;
             if (element.Children && element.Children[0] && element.Children[0]["osg.Node"]) {
                 let child = element.Children[0]["osg.Node"]
-                if (child.Name == element.Name && key == "osg.MatrixTransform" ) {
+                if (child.Name == element.Name && key == "osg.MatrixTransform") {
                     isWireframeNode = true;
                 }
             }
@@ -121,7 +121,7 @@ function splitChildren(nodes: OSG.NodeMap[]) {
                 element.nodeId = nodeId++;
                 element.type = key;
             }
-            
+
             if (globalNodes.indexOf(element) == -1 && !isWireframeNode) {
                 globalNodes.push(element);
                 nodeMap[key].push(element);
@@ -151,7 +151,7 @@ function generateGltfNode(node: OSG.NodeType) {
             break;
         case OSG.ENode.MatrixTransform:
             let { Matrix } = node as OSG.MatrixTransform;
-            if (Matrix && JSON.stringify(Matrix)!='[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]') {
+            if (Matrix && JSON.stringify(Matrix) != '[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]') {
                 Object.assign(obj, { matrix: Matrix });
             }
             break;
@@ -176,7 +176,7 @@ function getNodeChildren(nodes: OSG.NodeMap[]): number[] {
     let ids = [];
     nodes.forEach((node) => {
         let child = Object.values(node)[0];
-        let id = child.nodeId||child.Children && Object.values(child.Children[0])[0].nodeId;
+        let id = child.nodeId || child.Children && Object.values(child.Children[0])[0].nodeId;
         if (typeof id != "undefined") {
             ids.push(id);
         }
@@ -186,9 +186,6 @@ function getNodeChildren(nodes: OSG.NodeMap[]): number[] {
 
 function generateGltfMesh(node: OSG.Geometry) {
     let { PrimitiveSetList, StateSet, VertexAttributeList, Name } = node;
-    if (!Name) {
-        debugger;
-    }
     let primitives = [];
     let mesh = {
         name: Name,
@@ -198,7 +195,7 @@ function generateGltfMesh(node: OSG.Geometry) {
     primitives.push(primitive);
 
     if (VertexAttributeList) { //accessors -> attributes
-        if(Name == "saberRed_saberRed_0"){debugger}
+        if (Name == "saberRed_saberRed_0") { debugger }
         let attributes = decodeOSGVertexAttribute(VertexAttributeList, Name);
         if (attributes) {
             primitive.attributes = attributes;
@@ -237,8 +234,6 @@ function decodeOSGStateSet(stateSet: OSG.StateSet): boolean {
             if (state) {
                 let arrtibute = decodeOSGJSStateSet(state);
                 Object.assign(mtl, arrtibute);
-            } else {
-                debugger
             }
             flag = true;
             stateSet.materialId = materialId;
@@ -252,7 +247,7 @@ function decodeOSGStateSet(stateSet: OSG.StateSet): boolean {
 }
 
 function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
-    let { _attributeArray,_name } = stateSet;
+    let { _attributeArray } = stateSet;
     let attribute = _attributeArray[0];
     let { _object } = attribute;
     let { _activeChannels } = _object;
@@ -267,11 +262,10 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
         if (displayName == "Base Color") {
             if (color) {
                 pbrMetallicRoughness.baseColorFactor = [...color.map((c) => c * factor), 1.0];
-            } 
-            if (factor != 1) {
+            }else if (factor != 1) {
                 pbrMetallicRoughness.baseColorFactor = [...[1.0, 1.0, 1.0].map((c) => c * factor), 1.0];
             }
-            if(textureModel) {
+            if (textureModel) {
                 pbrMetallicRoughness.baseColorTexture = {
                     index: textureId++
                 };
@@ -288,18 +282,20 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
                 if (color) {
                     emissiveFactor = [...color.map((c) => {
                         let res = c * factor;
-                        if(res<1){
+                        if (res < 1) {
                             return res;
-                        }else{
-                            return 0;
+                        } else {
+                            return c;
                         }
                     })];
                 }
-                if (emissiveTexture) {
+                if (textureModel) {
                     emissiveTexture = {
                         index: textureId++
                     };
-                    // textureModel['id'] = textureId++;
+                    if (!color) {
+                        emissiveFactor = [factor, factor, factor];
+                    }
                     decodeOSGTexture(textureModel);
 
                 }
@@ -428,7 +424,7 @@ function decodeOSGAttribute(attribute: OSG.VertexAttribute, Name: string, key: O
     if (!geometry) { return }
     let { _attributes } = geometry;
     let _attribute = _attributes[key] || _attributes[`_${key.replace("TexCoord", "")}`];
-    let { _minMax, _type, _elements } = _attribute;
+    let { _minMax, _type } = _attribute;
     let { Array, ItemSize, Type } = attribute; // bufferViews
     let byteArray = Object.values(Array)[0];
     let { Size, Offset } = byteArray;

@@ -168,9 +168,6 @@ function getNodeChildren(nodes) {
 }
 function generateGltfMesh(node) {
     let { PrimitiveSetList, StateSet, VertexAttributeList, Name } = node;
-    if (!Name) {
-        debugger;
-    }
     let primitives = [];
     let mesh = {
         name: Name,
@@ -220,9 +217,6 @@ function decodeOSGStateSet(stateSet) {
                 let arrtibute = decodeOSGJSStateSet(state);
                 Object.assign(mtl, arrtibute);
             }
-            else {
-                debugger;
-            }
             flag = true;
             stateSet.materialId = materialId;
             globalMaterials.push(mtl);
@@ -234,7 +228,7 @@ function decodeOSGStateSet(stateSet) {
     return flag;
 }
 function decodeOSGJSStateSet(stateSet) {
-    let { _attributeArray, _name } = stateSet;
+    let { _attributeArray } = stateSet;
     let attribute = _attributeArray[0];
     let { _object } = attribute;
     let { _activeChannels } = _object;
@@ -252,7 +246,7 @@ function decodeOSGJSStateSet(stateSet) {
             if (color) {
                 pbrMetallicRoughness.baseColorFactor = [...color.map((c) => c * factor), 1.0];
             }
-            if (factor != 1) {
+            else if (factor != 1) {
                 pbrMetallicRoughness.baseColorFactor = [...[1.0, 1.0, 1.0].map((c) => c * factor), 1.0];
             }
             if (textureModel) {
@@ -279,15 +273,17 @@ function decodeOSGJSStateSet(stateSet) {
                                 return res;
                             }
                             else {
-                                return 0;
+                                return c;
                             }
                         })];
                 }
-                if (emissiveTexture) {
+                if (textureModel) {
                     emissiveTexture = {
                         index: textureId++
                     };
-                    // textureModel['id'] = textureId++;
+                    if (!color) {
+                        emissiveFactor = [factor, factor, factor];
+                    }
                     decodeOSGTexture(textureModel);
                 }
             }
@@ -407,7 +403,7 @@ function decodeOSGAttribute(attribute, Name, key) {
     }
     let { _attributes } = geometry;
     let _attribute = _attributes[key] || _attributes[`_${key.replace("TexCoord", "")}`];
-    let { _minMax, _type, _elements } = _attribute;
+    let { _minMax, _type } = _attribute;
     let { Array, ItemSize, Type } = attribute; // bufferViews
     let byteArray = Object.values(Array)[0];
     let { Size, Offset } = byteArray;
@@ -558,3 +554,4 @@ function main() {
     exportFile("scene.gltf", JSON.stringify(gltf, null, 4));
 }
 main();
+export {};
