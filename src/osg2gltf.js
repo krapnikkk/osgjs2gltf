@@ -403,7 +403,7 @@ function getIndicesFromOSGJS(name, node, idx) {
     return res;
 }
 let st = Date.now();
-let attributeKeysMap = {}, indicesKeysMap = {}, statesetKeysMap = {};
+let attributeKeysMap = {}, indicesKeysMap = {};
 function decodeOSGPrimitiveSet(primitiveSetList, Name) {
     let primitives = [];
     if (typeof indicesKeysMap[`${Name}${st}`] == "undefined") {
@@ -417,9 +417,9 @@ function decodeOSGPrimitiveSet(primitiveSetList, Name) {
             let { Mode } = primitive;
             let mode = PRIMITIVE_TABLE[Mode];
             let accessor = decodeOSGIndice(Name, idx);
-            accessorId++;
+            // accessorId++;
             globalAccessors.push(accessor);
-            Object.assign(gltfPrimitive, { mode, indices: accessorId });
+            Object.assign(gltfPrimitive, { mode, indices: accessorId++ });
             primitives.push(gltfPrimitive);
         }
     });
@@ -440,11 +440,10 @@ function decodeOSGVertexAttribute(vertextAttribute, Name) {
             continue;
         }
         let type = ATTRIBUTE_TABLE[key];
-        let accessor = decodeOSGAttribute(geometry, Name, key);
+        let accessor = decodeOSGAttribute(geometry, key);
         if (accessor) {
-            accessorId++;
+            attributes[type] = accessorId++;
             globalAccessors.push(accessor);
-            attributes[type] = accessorId;
         }
         else {
             // other key 
@@ -455,9 +454,12 @@ function decodeOSGVertexAttribute(vertextAttribute, Name) {
     return attributes;
 }
 // primitive.attributes
-function decodeOSGAttribute(geometry, Name, key) {
+function decodeOSGAttribute(geometry, key) {
+    if (key == "Color") {
+        return;
+    }
+    ;
     let accessor = Object.create({});
-    // window["_log"](Name,key, geometry);
     if (!geometry) {
         return;
     }
@@ -473,17 +475,32 @@ function decodeOSGAttribute(geometry, Name, key) {
     let type = TYPE_TABLE[_itemSize];
     let Size = byteLength / _itemSize;
     let bufferView = 1;
+    window["_log"](_elements);
+    debugger;
     // let bufferView = decodeBufferView(byteArray, Type, ItemSize);
-    if (_minMax) {
-        Object.assign(accessor, {
-            bufferView,
-            componentType: _type,
-            byteOffset: byteOffset,
-            count: Size,
-            max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
-            mim: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
-            type,
-        });
+    if (_itemSize > 1) {
+        if (_minMax) {
+            Object.assign(accessor, {
+                bufferView,
+                componentType: _type,
+                byteOffset: byteOffset,
+                count: Size,
+                max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
+                mim: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
+                type,
+            });
+        }
+        else {
+            Object.assign(accessor, {
+                bufferView,
+                componentType: _type,
+                byteOffset: byteOffset,
+                count: Size,
+                max: getMax(_elements, _itemSize, true),
+                mim: getMax(_elements, _itemSize, false),
+                type,
+            });
+        }
     }
     else {
         Object.assign(accessor, {
@@ -501,7 +518,6 @@ function decodeOSGAttribute(geometry, Name, key) {
 function decodeOSGIndice(Name, idx) {
     let accessor = Object.create({});
     let geometry = findIndicesFromNode(Name, _root_, idx);
-    // window["_log"](Name, idx, geometry);
     if (!geometry) {
         return;
     }
@@ -518,16 +534,29 @@ function decodeOSGIndice(Name, idx) {
     // let { Size, Offset } = byteArray;
     // let bufferView = decodeBufferView(byteArray, Type, ItemSize);
     let bufferView = 1;
-    if (_minMax) {
-        Object.assign(accessor, {
-            bufferView,
-            componentType: _type,
-            byteOffset: byteOffset,
-            count: Size,
-            max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
-            mim: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
-            type,
-        });
+    if (_itemSize > 1) {
+        if (_minMax) {
+            Object.assign(accessor, {
+                bufferView,
+                componentType: _type,
+                byteOffset: byteOffset,
+                count: Size,
+                max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
+                mim: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
+                type,
+            });
+        }
+        else {
+            Object.assign(accessor, {
+                bufferView,
+                componentType: _type,
+                byteOffset: byteOffset,
+                count: Size,
+                max: getMax(_elements, _itemSize, true),
+                mim: getMax(_elements, _itemSize, false),
+                type,
+            });
+        }
     }
     else {
         Object.assign(accessor, {
@@ -643,5 +672,14 @@ function main() {
     exportFile("scene.bin", modelFile.buffer);
     exportFile("scene.gltf", JSON.stringify(gltf, null, 4));
 }
+function getMax(arr, interval, max = true) {
+    let source = new Array(interval).fill(max ? Number.MIN_SAFE_INTEGER : Number.MAX_SAFE_INTEGER);
+    for (let i = 0; i < arr.length; i++) {
+        let item = arr[i];
+        let idx = i % interval;
+        source[idx] = max ? Math.max(item, source[idx]) : Math.min(item, source[idx]);
+    }
+    ;
+    return source;
+}
 main();
-export {};
