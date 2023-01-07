@@ -87,9 +87,11 @@ let globalAccessors = [], accessorId = 0;
 let globalMeshes = [], meshId = 0;
 let globalMaterials = [], materialId = 0;
 let globalBufferViews = [], bufferViewId = 0;
-let globalTextures = [], textureId = 0;
+let globalTextures = [];
 let globalImages = [];
 let globalSamplers = [];
+let globalElementArrayBuffers = [];
+let globalArrayBuffersMap = {};
 function decodeUint8Array(e) {
     let i = "";
     for (var n = new Uint8Array(e), r = 0; r < e.length; r += 65535)
@@ -151,7 +153,7 @@ function generateGltfNode(node) {
     if (children) {
         Object.assign(obj, { children });
     }
-    if (node['translation'] || node['rotation'] || node['scale'] || node['weights'] || node['skin']) {
+    if (node['translation'] || node['rotation'] || node['scale'] || node['weights'] || node['skin'] || node['camera']) {
         debugger;
     }
     switch (type) {
@@ -203,15 +205,21 @@ function generateGltfMesh(node) {
         let attributes = decodeOSGVertexAttribute(VertexAttributeList, Name);
         if (attributes) {
             primitive.attributes = attributes;
-            // if(JSON.stringify(attributes)!="{}"){}
+            if (JSON.stringify(attributes) == "{}") {
+                let geometry = GeometryMap[Name];
+                if (geometry) {
+                    // todo
+                    debugger;
+                }
+                else {
+                    debugger;
+                }
+            }
         }
     }
     if (PrimitiveSetList) { //accessors ->primitives[indices]
         let primitiveArr = decodeOSGPrimitiveSet(PrimitiveSetList, Name);
-        if (primitiveArr.length > 1) {
-            debugger;
-        }
-        ;
+        // if (primitiveArr.length > 1) { debugger };
         Object.assign(primitive, primitiveArr[0]);
     }
     if (StateSet) { // material
@@ -237,8 +245,8 @@ function decodeOSGStateSet(stateSet) {
             let state = findMaterialFromNode(Name, _root_);
             let mtl = Object.create({});
             Object.assign(mtl, {
-                name: Name,
-                doubleSided: true
+                doubleSided: true,
+                name: Name
             });
             if (state) {
                 let arrtibute = decodeOSGJSStateSet(state);
@@ -273,10 +281,10 @@ function decodeOSGJSStateSet(stateSet) {
                 pbrMetallicRoughness.baseColorFactor = [...[1.0, 1.0, 1.0].map((c) => c * factor), 1.0];
             }
             if (textureModel) {
+                let index = decodeOSGTexture(textureModel);
                 pbrMetallicRoughness.baseColorTexture = {
-                    index: textureId++
+                    index
                 };
-                decodeOSGTexture(textureModel);
             }
         }
         else {
@@ -285,10 +293,10 @@ function decodeOSGJSStateSet(stateSet) {
                     pbrMetallicRoughness.metallicFactor = factor;
                 }
                 if (textureModel) {
+                    let index = decodeOSGTexture(textureModel);
                     pbrMetallicRoughness.baseColorTexture = {
-                        index: textureId++
+                        index
                     };
-                    decodeOSGTexture(textureModel);
                 }
             }
             else if (displayName == "Glossiness") {
@@ -307,8 +315,9 @@ function decodeOSGJSStateSet(stateSet) {
                         })];
                 }
                 if (textureModel) {
+                    let index = decodeOSGTexture(textureModel);
                     emissiveTexture = {
-                        index: textureId++
+                        index
                     };
                     if (!color) {
                         emissiveFactor = [...[0, 0, 0].map((c) => {
@@ -320,13 +329,13 @@ function decodeOSGJSStateSet(stateSet) {
                                 }
                             })];
                     }
-                    decodeOSGTexture(textureModel);
                 }
             }
             else if (displayName == "Specular F0") {
                 // todo
             }
             else if (displayName == "Opacity") {
+                debugger;
                 if (type == "alphaBlend") {
                     alphaMode = "BLEND";
                 }
@@ -340,26 +349,26 @@ function decodeOSGJSStateSet(stateSet) {
                     debugger;
                 }
                 if (textureModel) {
+                    let index = decodeOSGTexture(textureModel);
                     pbrMetallicRoughness.metallicRoughnessTexture = {
-                        index: textureId++
+                        index
                     };
-                    decodeOSGTexture(textureModel);
                 }
             }
             else if (displayName == "Normal map") {
                 if (textureModel) {
+                    let index = decodeOSGTexture(textureModel);
                     normalTexture = {
-                        index: textureId++
+                        index
                     };
-                    decodeOSGTexture(textureModel);
                 }
             }
             else if (displayName == "Ambient Occlusion") {
                 if (textureModel) {
+                    let index = decodeOSGTexture(textureModel);
                     occlusionTexture = {
-                        index: textureId++
+                        index
                     };
-                    decodeOSGTexture(textureModel);
                 }
             }
             else {
@@ -538,22 +547,12 @@ function decodeOSGAttribute(geometry, key) {
         return;
     }
     ;
-    let { _minMax, _type, _elements, _itemSize, _numItems, _target } = _attribute;
+    let { _type, _elements, _itemSize, _numItems, _target } = _attribute;
     let { byteLength, BYTES_PER_ELEMENT } = _elements;
     let type = TYPE_TABLE[_itemSize];
     let count = _numItems || byteLength / _itemSize;
     var byteStride = BYTES_PER_ELEMENT * _itemSize;
     globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
-    // if (_minMax) {
-    //     Object.assign(accessor, {
-    //         bufferView: bufferViewId,
-    //         componentType: _type,
-    //         count,
-    //         max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
-    //         min: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
-    //         type,
-    //     });
-    // } else {
     Object.assign(accessor, {
         bufferView: bufferViewId,
         componentType: _type,
@@ -562,7 +561,6 @@ function decodeOSGAttribute(geometry, key) {
         min: getMax(_elements, _itemSize, false),
         type,
     });
-    // }
     bufferViewId++;
     return accessor;
 }
@@ -574,9 +572,9 @@ function decodeOSGIndice(Name, idx) {
         return;
     }
     let { _primitives } = geometry;
-    if (_primitives.length > 1) {
-        debugger;
-    }
+    // if (_primitives.length > 1) {
+    //     debugger;
+    // }
     let primitives = _primitives[0];
     let { indices } = primitives;
     let { _type, _elements, _itemSize, _numItems, _target } = indices; // bufferViews
@@ -595,6 +593,7 @@ function decodeOSGIndice(Name, idx) {
     return accessor;
 }
 function decodeOSGTexture(textureModel) {
+    let index = 0;
     let { attributes } = textureModel;
     let { image, magFilter, minFilter, wrapS, wrapT } = attributes;
     let { name } = image.attributes;
@@ -622,8 +621,13 @@ function decodeOSGTexture(textureModel) {
             sampler: samplerId,
             source: uriId,
         });
+        index = globalTextures.length;
         globalTextures.push(texture);
     }
+    else {
+        index = globalTextures.findIndex(tex => tex.sampler == samplerId && tex.source == uriId);
+    }
+    return index;
 }
 function hasSameObjact(arr, obj) {
     return arr.find((object) => JSON.stringify(object) == JSON.stringify(obj));
@@ -702,8 +706,6 @@ function concatArraybuffer(buffers) {
         return ab;
     });
 }
-var globalElementArrayBuffers = [];
-var globalArrayBuffersMap = {};
 function handleBufferViews() {
     for (let i = 0; i < globalBuffers.length; i++) {
         let buffer = globalBuffers[i];

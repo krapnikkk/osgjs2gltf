@@ -2,6 +2,7 @@ import { glTF } from "../@types/gltf";
 declare var _root_: OSGJS.Node;
 declare var _model_: any;
 declare var Uint8ArrayMap: { [key: number]: Uint8Array };
+declare var GeometryMap:{[key:string]:OSGJS.Geometry};
 declare function clearUint8Array(): void;
 var PRIMITIVE_TABLE = {
     "POINTS": 0,
@@ -89,9 +90,11 @@ let globalAccessors = [], accessorId = 0;
 let globalMeshes = [], meshId = 0;
 let globalMaterials = [], materialId = 0;
 let globalBufferViews = [], bufferViewId = 0;
-let globalTextures = [], textureId = 0;
+let globalTextures = [];
 let globalImages = [];
 let globalSamplers = [];
+let globalElementArrayBuffers = [];
+let globalArrayBuffersMap = {};
 
 function decodeUint8Array(e: Uint8Array): string {
     let i = "";
@@ -159,7 +162,7 @@ function generateGltfNode(node: OSG.NodeType) {
     if (children) {
         Object.assign(obj, { children });
     }
-    if(node['translation']||node['rotation']||node['scale']||node['weights']||node['skin']){
+    if (node['translation'] || node['rotation'] || node['scale'] || node['weights'] || node['skin'] || node['camera']) {
         debugger;
     }
     switch (type) {
@@ -215,13 +218,21 @@ function generateGltfMesh(node: OSG.Geometry) {
         let attributes = decodeOSGVertexAttribute(VertexAttributeList, Name);
         if (attributes) {
             primitive.attributes = attributes;
-            // if(JSON.stringify(attributes)!="{}"){}
+            if(JSON.stringify(attributes)=="{}"){
+                let geometry = GeometryMap[Name];
+                if(geometry){
+                    // todo
+                    debugger;
+                }else{
+                    debugger;
+                }
+            }
         }
     }
 
     if (PrimitiveSetList) {//accessors ->primitives[indices]
         let primitiveArr = decodeOSGPrimitiveSet(PrimitiveSetList, Name);
-        if (primitiveArr.length > 1) { debugger };
+        // if (primitiveArr.length > 1) { debugger };
         Object.assign(primitive, primitiveArr[0])
     }
 
@@ -251,8 +262,8 @@ function decodeOSGStateSet(stateSet: OSG.StateSet): boolean {
             let state = findMaterialFromNode(Name, _root_);
             let mtl = Object.create({});
             Object.assign(mtl, {
-                name: Name,
-                doubleSided: true
+                doubleSided: true,
+                name: Name
             })
             if (state) {
                 let arrtibute = decodeOSGJSStateSet(state);
@@ -276,7 +287,7 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
     let { _object } = attribute;
     let { _activeChannels } = _object;
     let pbrMetallicRoughness = Object.create({});
-    let emissiveFactor, emissiveTexture,normalTexture,occlusionTexture,alphaMode;
+    let emissiveFactor, emissiveTexture, normalTexture, occlusionTexture, alphaMode;
 
     _activeChannels.forEach((channel) => {
         let { attributes } = channel;
@@ -288,21 +299,21 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
                 pbrMetallicRoughness.baseColorFactor = [...[1.0, 1.0, 1.0].map((c) => c * factor), 1.0];
             }
             if (textureModel) {
+                let index = decodeOSGTexture(textureModel);
                 pbrMetallicRoughness.baseColorTexture = {
-                    index: textureId++
+                    index
                 };
-                decodeOSGTexture(textureModel);
             }
         } else {
             if (displayName == "Metalness") {
-                if(factor){
+                if (factor) {
                     pbrMetallicRoughness.metallicFactor = factor;
                 }
-                if(textureModel){
+                if (textureModel) {
+                    let index = decodeOSGTexture(textureModel);
                     pbrMetallicRoughness.baseColorTexture = {
-                        index: textureId++
+                        index
                     };
-                    decodeOSGTexture(textureModel);
                 }
             } else if (displayName == "Glossiness") {
                 1 - factor !== 1 ? pbrMetallicRoughness.roughnessFactor = 1 - factor : null;
@@ -318,11 +329,12 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
                     })];
                 }
                 if (textureModel) {
+                    let index = decodeOSGTexture(textureModel);
                     emissiveTexture = {
-                        index: textureId++
+                        index
                     };
                     if (!color) {
-                        emissiveFactor = [...[0,0,0].map((c) => {
+                        emissiveFactor = [...[0, 0, 0].map((c) => {
                             if (factor < 1) {
                                 return factor;
                             } else {
@@ -330,44 +342,44 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
                             }
                         })];
                     }
-                    decodeOSGTexture(textureModel);
 
                 }
             } else if (displayName == "Specular F0") {
                 // todo
             } else if (displayName == "Opacity") {
-                if(type == "alphaBlend"){
+                debugger;
+                if (type == "alphaBlend") {
                     alphaMode = "BLEND"
-                }else{
+                } else {
                     debugger;
                 }
             } else if (displayName == "Roughness") {
-                if(factor && factor != 1){
+                if (factor && factor != 1) {
                     pbrMetallicRoughness.roughnessFactor = factor;
                     debugger
                 }
                 if (textureModel) {
+                    let index = decodeOSGTexture(textureModel);
                     pbrMetallicRoughness.metallicRoughnessTexture = {
-                        index: textureId++
+                        index
                     };
-                    decodeOSGTexture(textureModel);
                 }
-            } else if(displayName == "Normal map"){
-                if(textureModel){
+            } else if (displayName == "Normal map") {
+                if (textureModel) {
+                    let index = decodeOSGTexture(textureModel);
                     normalTexture = {
-                        index: textureId++
+                        index
                     }
-                    decodeOSGTexture(textureModel);
                 }
-            } else if(displayName == "Ambient Occlusion"){
-                if(textureModel){
+            } else if (displayName == "Ambient Occlusion") {
+                if (textureModel) {
+                    let index = decodeOSGTexture(textureModel);
                     occlusionTexture = {
-                        index: textureId++
+                        index
                     }
-                    decodeOSGTexture(textureModel);
                 }
-                
-            }else {
+
+            } else {
                 window['_log'](`unsupport display attribute:${displayName}`);
                 debugger;
             }
@@ -387,12 +399,12 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
     if (occlusionTexture) {
         Object.assign(attr, { occlusionTexture });
     }
-    if(alphaMode){
+    if (alphaMode) {
         Object.assign(attr, { alphaMode });
-        
+
     }
-    
-    
+
+
     return attr;
 }
 
@@ -552,31 +564,20 @@ function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
     // let _attribute = _attributes[key] || _attributes[`_${key.replace("TexCoord", "")}`];
     let _attribute = _attributes[key];
     if (!_attribute) { window['_log'](`can't find key:${key}`); return; };
-    let { _minMax, _type, _elements, _itemSize, _numItems, _target } = _attribute;
+    let { _type, _elements, _itemSize, _numItems, _target } = _attribute;
     let { byteLength, BYTES_PER_ELEMENT } = _elements;
     let type = TYPE_TABLE[_itemSize];
     let count = _numItems || byteLength / _itemSize;
     var byteStride = BYTES_PER_ELEMENT * _itemSize;
     globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
-    // if (_minMax) {
-    //     Object.assign(accessor, {
-    //         bufferView: bufferViewId,
-    //         componentType: _type,
-    //         count,
-    //         max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
-    //         min: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
-    //         type,
-    //     });
-    // } else {
-        Object.assign(accessor, {
-            bufferView: bufferViewId,
-            componentType: _type,
-            count,
-            max: getMax(_elements, _itemSize, true),
-            min: getMax(_elements, _itemSize, false),
-            type,
-        });
-    // }
+    Object.assign(accessor, {
+        bufferView: bufferViewId,
+        componentType: _type,
+        count,
+        max: getMax(_elements, _itemSize, true),
+        min: getMax(_elements, _itemSize, false),
+        type,
+    });
     bufferViewId++;
     return accessor;
 
@@ -590,9 +591,9 @@ function decodeOSGIndice(Name: string, idx: number) {
         return;
     }
     let { _primitives } = geometry;
-    if (_primitives.length > 1) {
-        debugger;
-    }
+    // if (_primitives.length > 1) {
+    //     debugger;
+    // }
     let primitives = _primitives[0];
     let { indices } = primitives
     let { _type, _elements, _itemSize, _numItems, _target } = indices; // bufferViews
@@ -613,6 +614,7 @@ function decodeOSGIndice(Name: string, idx: number) {
 }
 
 function decodeOSGTexture(textureModel: OSGJS.ITextureModel) {
+    let index = 0;
     let { attributes } = textureModel;
     let { image, magFilter, minFilter, wrapS, wrapT } = attributes;
     let { name } = image.attributes;
@@ -643,9 +645,12 @@ function decodeOSGTexture(textureModel: OSGJS.ITextureModel) {
             sampler: samplerId,
             source: uriId,
         })
-
+        index = globalTextures.length;
         globalTextures.push(texture);
+    } else {
+        index = globalTextures.findIndex(tex => tex.sampler == samplerId && tex.source == uriId);
     }
+    return index;
 }
 
 function hasSameObjact(arr: Array<any>, obj: any): boolean {
@@ -729,8 +734,7 @@ async function concatArraybuffer(buffers: ArrayBuffer[]) {
     return ab;
 }
 
-var globalElementArrayBuffers = [];
-var globalArrayBuffersMap = {};
+
 function handleBufferViews() {
     for (let i = 0; i < globalBuffers.length; i++) {
         let buffer = globalBuffers[i];
@@ -808,8 +812,6 @@ async function concatBufferViews() {
     let ab = await concatArraybuffer([elementArrayBufferView, ...arrayBuffersArr]);
     return ab;
 }
-
-
 
 main();
 
