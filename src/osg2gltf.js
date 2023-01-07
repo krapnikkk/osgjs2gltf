@@ -1,4 +1,12 @@
-var modelFile;
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var PRIMITIVE_TABLE = {
     "POINTS": 0,
     "LINES": 1,
@@ -208,9 +216,6 @@ function generateGltfMesh(node) {
         if (typeof materialId != "undefined") {
             Object.assign(primitive, { material: materialId });
         }
-        else {
-            debugger;
-        }
     }
     globalMeshes.push(mesh);
 }
@@ -417,7 +422,9 @@ function decodeOSGPrimitiveSet(primitiveSetList, Name) {
             let { Mode } = primitive;
             let mode = PRIMITIVE_TABLE[Mode];
             let accessor = decodeOSGIndice(Name, idx);
-            // accessorId++;
+            if (!accessor) {
+                continue;
+            }
             globalAccessors.push(accessor);
             Object.assign(gltfPrimitive, { mode, indices: accessorId++ });
             primitives.push(gltfPrimitive);
@@ -442,8 +449,9 @@ function decodeOSGVertexAttribute(vertextAttribute, Name) {
         let type = ATTRIBUTE_TABLE[key];
         let accessor = decodeOSGAttribute(geometry, key);
         if (accessor) {
-            attributes[type] = accessorId++;
+            attributes[type] = accessorId;
             globalAccessors.push(accessor);
+            accessorId++;
         }
         else {
             // other key 
@@ -453,9 +461,10 @@ function decodeOSGVertexAttribute(vertextAttribute, Name) {
     attributeKeysMap[`${Name}${st}`] = ++idx;
     return attributes;
 }
+var globalBuffers = [];
 // primitive.attributes
 function decodeOSGAttribute(geometry, key) {
-    if (key == "Color") {
+    if (key == "Color" || key == "Tangent") {
         return;
     }
     ;
@@ -464,50 +473,36 @@ function decodeOSGAttribute(geometry, key) {
         return;
     }
     let { _attributes } = geometry;
-    let _attribute = _attributes[key] || _attributes[`_${key.replace("TexCoord", "")}`];
+    // let _attribute = _attributes[key] || _attributes[`_${key.replace("TexCoord", "")}`];
+    let _attribute = _attributes[key];
     if (!_attribute) {
         window['_log'](`can't find key:${key}`);
         return;
     }
     ;
-    let { _minMax, _type, _elements, _itemSize } = _attribute;
-    let { byteLength, byteOffset } = _elements;
+    let { _minMax, _type, _elements, _itemSize, _numItems, _target } = _attribute;
+    let { byteLength, BYTES_PER_ELEMENT } = _elements;
     let type = TYPE_TABLE[_itemSize];
-    let Size = byteLength / _itemSize;
-    let bufferView = 1;
-    window["_log"](_elements);
-    debugger;
-    // let bufferView = decodeBufferView(byteArray, Type, ItemSize);
-    if (_itemSize > 1) {
-        if (_minMax) {
-            Object.assign(accessor, {
-                bufferView,
-                componentType: _type,
-                byteOffset: byteOffset,
-                count: Size,
-                max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
-                mim: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
-                type,
-            });
-        }
-        else {
-            Object.assign(accessor, {
-                bufferView,
-                componentType: _type,
-                byteOffset: byteOffset,
-                count: Size,
-                max: getMax(_elements, _itemSize, true),
-                mim: getMax(_elements, _itemSize, false),
-                type,
-            });
-        }
+    let count = _numItems || byteLength / _itemSize;
+    var byteStride = BYTES_PER_ELEMENT * _itemSize;
+    globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
+    if (_minMax) {
+        Object.assign(accessor, {
+            bufferView: bufferViewId,
+            componentType: _type,
+            count,
+            max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
+            min: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
+            type,
+        });
     }
     else {
         Object.assign(accessor, {
-            bufferView,
+            bufferView: bufferViewId,
             componentType: _type,
-            // byteOffset: Offset,
-            count: Size,
+            count,
+            max: getMax(_elements, _itemSize, true),
+            min: getMax(_elements, _itemSize, false),
             type,
         });
     }
@@ -527,62 +522,20 @@ function decodeOSGIndice(Name, idx) {
     }
     let primitives = _primitives[0];
     let { indices } = primitives;
-    let { _minMax, _type, _elements, _itemSize } = indices; // bufferViews
-    let { byteLength, byteOffset } = _elements;
+    let { _type, _elements, _itemSize, _numItems, _target } = indices; // bufferViews
+    let { byteLength, BYTES_PER_ELEMENT } = _elements;
     let type = TYPE_TABLE[_itemSize];
-    let Size = byteLength / _itemSize;
-    // let { Size, Offset } = byteArray;
-    // let bufferView = decodeBufferView(byteArray, Type, ItemSize);
-    let bufferView = 1;
-    if (_itemSize > 1) {
-        if (_minMax) {
-            Object.assign(accessor, {
-                bufferView,
-                componentType: _type,
-                byteOffset: byteOffset,
-                count: Size,
-                max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
-                mim: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
-                type,
-            });
-        }
-        else {
-            Object.assign(accessor, {
-                bufferView,
-                componentType: _type,
-                byteOffset: byteOffset,
-                count: Size,
-                max: getMax(_elements, _itemSize, true),
-                mim: getMax(_elements, _itemSize, false),
-                type,
-            });
-        }
-    }
-    else {
-        Object.assign(accessor, {
-            bufferView,
-            componentType: _type,
-            // byteOffset: Offset,
-            count: Size,
-            type,
-        });
-    }
+    let count = _numItems || byteLength / _itemSize;
+    var byteStride = BYTES_PER_ELEMENT * _itemSize;
+    globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
+    Object.assign(accessor, {
+        bufferView: 0,
+        componentType: _type,
+        count,
+        type,
+    });
     bufferViewId++;
     return accessor;
-}
-function decodeBufferView(byteArray, type, itemSize) {
-    let bufferView = Object.create({});
-    let { Size, Offset } = byteArray;
-    Object.assign(bufferView, {
-        "buffer": 0,
-        "byteLength": Size * itemSize,
-        "byteOffset": Offset,
-        // "byteStride": itemSize,
-        // "name": "floatBufferViews",
-        // "target": TARGET_TABLE[type]
-    });
-    globalBufferViews.push(bufferView);
-    return bufferViewId;
 }
 function decodeOSGTexture(textureModel) {
     let { attributes } = textureModel;
@@ -631,46 +584,50 @@ function exportFile(name, data) {
     save_link.dispatchEvent(ev);
 }
 function main() {
-    clearUint8Array();
-    let Uint8s = Object.values(Uint8ArrayMap);
-    let osg = decodeFileBinz(Uint8s[0]);
-    modelFile = Uint8s[1];
-    decodeOSGRoot(osg);
-    decodeOSGNode(globalNodes);
-    decodeOSGGeometries(nodeMap['osg.Geometry']);
-    let gltf = {
-        accessors: globalAccessors,
-        asset: {
-            generator: "gltf-creator",
-            version: "2.0",
-        },
-        buffers: [
-            {
-                "byteLength": modelFile.byteLength,
-                "uri": "scene.bin"
-            }
-        ],
-        bufferViews: globalBufferViews,
-        // extensionsUsed: [],
-        // extensionsRequired: [],
-        images: globalImages,
-        materials: globalMaterials,
-        meshes: globalMeshes,
-        nodes: gltfNodes,
-        samplers: globalSamplers,
-        scene: 0,
-        scenes: [
-            {
-                "name": "Sketchfab_Scene",
-                "nodes": [
-                    0
-                ]
-            }
-        ],
-        textures: globalTextures,
-    };
-    exportFile("scene.bin", modelFile.buffer);
-    exportFile("scene.gltf", JSON.stringify(gltf, null, 4));
+    return __awaiter(this, void 0, void 0, function* () {
+        clearUint8Array();
+        let Uint8s = Object.values(Uint8ArrayMap);
+        let osg = decodeFileBinz(Uint8s[0]);
+        decodeOSGRoot(osg);
+        decodeOSGNode(globalNodes);
+        decodeOSGGeometries(nodeMap['osg.Geometry']);
+        handleBufferViews();
+        let modelName = _model_.attributes.name;
+        let buffer = yield concatBufferViews();
+        let gltf = {
+            accessors: globalAccessors,
+            asset: {
+                generator: "gltf-creator",
+                version: "2.0",
+            },
+            buffers: [
+                {
+                    "byteLength": buffer.byteLength,
+                    "uri": `${modelName}.bin`
+                }
+            ],
+            bufferViews: globalBufferViews,
+            // extensionsUsed: [],
+            // extensionsRequired: [],
+            images: globalImages,
+            materials: globalMaterials,
+            meshes: globalMeshes,
+            nodes: gltfNodes,
+            samplers: globalSamplers,
+            scene: 0,
+            scenes: [
+                {
+                    "name": "Sketchfab_Scene",
+                    "nodes": [
+                        0
+                    ]
+                }
+            ],
+            textures: globalTextures,
+        };
+        exportFile(`${modelName}.bin`, buffer);
+        exportFile(`${modelName}.gltf`, JSON.stringify(gltf, null, 4));
+    });
 }
 function getMax(arr, interval, max = true) {
     let source = new Array(interval).fill(max ? Number.MIN_SAFE_INTEGER : Number.MAX_SAFE_INTEGER);
@@ -681,5 +638,90 @@ function getMax(arr, interval, max = true) {
     }
     ;
     return source;
+}
+function concatArraybuffer(buffers) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const ab = yield new Blob(buffers).arrayBuffer();
+        return ab;
+    });
+}
+var globalElementArrayBuffers = [];
+var globalArrayBuffersMap = {};
+function handleBufferViews() {
+    for (let i = 0; i < globalBuffers.length; i++) {
+        let buffer = globalBuffers[i];
+        let { target, byteStride } = buffer;
+        if (target == TARGET_TABLE['ELEMENT_ARRAY_BUFFER']) {
+            if (byteStride > 4) {
+                debugger;
+            }
+            globalElementArrayBuffers.push(buffer);
+        }
+        else {
+            if (byteStride <= 4) {
+                debugger;
+            }
+            if (typeof globalArrayBuffersMap[byteStride] == "undefined") {
+                globalArrayBuffersMap[byteStride] = [];
+            }
+            globalArrayBuffersMap[byteStride].push(buffer);
+        }
+    }
+}
+function concatBufferViews() {
+    return __awaiter(this, void 0, void 0, function* () {
+        let elementArrayBuffers = [], elementArrayBufferOffset = 0;
+        for (let i = 0; i < globalElementArrayBuffers.length; i++) {
+            let elementArrayBuffer = globalElementArrayBuffers[i];
+            let { id, data } = elementArrayBuffer;
+            let { buffer } = data;
+            let accessor = globalAccessors[id];
+            if (elementArrayBufferOffset > 0) {
+                accessor.byteOffset = elementArrayBufferOffset;
+            }
+            elementArrayBufferOffset += buffer.byteLength;
+            elementArrayBuffers.push(buffer);
+        }
+        let elementArrayBufferView = yield concatArraybuffer(elementArrayBuffers);
+        globalBufferViews.push({
+            "buffer": 0,
+            "byteLength": elementArrayBufferView.byteLength,
+            "name": "floatBufferViews",
+            "target": TARGET_TABLE['ELEMENT_ARRAY_BUFFER']
+        });
+        let arrayBuffersArr = [], idx = 1, byteLen = elementArrayBufferView.byteLength;
+        for (let key in globalArrayBuffersMap) {
+            let arrayBuffers = globalArrayBuffersMap[key];
+            let offset = 0, arrayBufferArr = [];
+            for (let i = 0; i < arrayBuffers.length; i++) {
+                let arrayBuffer = arrayBuffers[i];
+                let { id, data } = arrayBuffer;
+                let { buffer } = data;
+                let accessor = globalAccessors[id];
+                if (offset > 0) {
+                    accessor.byteOffset = offset;
+                }
+                accessor.bufferView = idx;
+                offset += buffer.byteLength;
+                arrayBufferArr.push(buffer);
+            }
+            idx++;
+            let buffer = yield concatArraybuffer(arrayBufferArr);
+            arrayBuffersArr.push(buffer);
+            arrayBufferArr.length = 0;
+            offset = 0;
+            globalBufferViews.push({
+                "buffer": 0,
+                "byteOffset": byteLen,
+                "byteStride": +key,
+                "byteLength": buffer.byteLength,
+                "name": "floatBufferViews",
+                "target": TARGET_TABLE['ARRAY_BUFFER']
+            });
+            byteLen += buffer.byteLength;
+        }
+        let ab = yield concatArraybuffer([elementArrayBufferView, ...arrayBuffersArr]);
+        return ab;
+    });
 }
 main();
