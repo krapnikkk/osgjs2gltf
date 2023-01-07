@@ -205,16 +205,6 @@ function generateGltfMesh(node) {
         let attributes = decodeOSGVertexAttribute(VertexAttributeList, Name);
         if (attributes) {
             primitive.attributes = attributes;
-            if (JSON.stringify(attributes) == "{}") {
-                let geometry = GeometryMap[Name];
-                if (geometry) {
-                    // todo
-                    debugger;
-                }
-                else {
-                    debugger;
-                }
-            }
         }
     }
     if (PrimitiveSetList) { //accessors ->primitives[indices]
@@ -223,7 +213,7 @@ function generateGltfMesh(node) {
         Object.assign(primitive, primitiveArr[0]);
     }
     if (StateSet) { // material
-        let materialId = decodeOSGStateSet(StateSet['osg.StateSet']);
+        let materialId = decodeOSGStateSet(StateSet['osg.StateSet'], Name);
         if (typeof materialId != "undefined") {
             Object.assign(primitive, { material: materialId });
         }
@@ -231,7 +221,7 @@ function generateGltfMesh(node) {
     globalMeshes.push(mesh);
 }
 let globalMtl = {};
-function decodeOSGStateSet(stateSet) {
+function decodeOSGStateSet(stateSet, title) {
     let idx;
     let { AttributeList, TextureAttributeList, UniqueID } = stateSet;
     if (typeof globalMtl[UniqueID] != "undefined") {
@@ -243,12 +233,18 @@ function decodeOSGStateSet(stateSet) {
             let material = attribute['osg.Material'];
             let { Name } = material;
             let state = findMaterialFromNode(Name, _root_);
-            let mtl = Object.create({});
-            Object.assign(mtl, {
-                doubleSided: true,
-                name: Name
-            });
+            if (!state) {
+                let geometry = GeometryMap[title];
+                if (geometry) {
+                    state = geometry.stateset;
+                }
+            }
             if (state) {
+                let mtl = Object.create({});
+                Object.assign(mtl, {
+                    doubleSided: true,
+                    name: Name
+                });
                 let arrtibute = decodeOSGJSStateSet(state);
                 Object.assign(mtl, arrtibute);
                 idx = materialId++;
@@ -508,21 +504,15 @@ function decodeOSGVertexAttribute(vertextAttribute, Name) {
     let idx = attributeKeysMap[`${Name}${st}`];
     let geometry = findGeometryFromNode(Name, _root_, idx);
     for (let key in vertextAttribute) {
-        let attribute = vertextAttribute[key];
-        delete attribute.UniqueID;
-        if (JSON.stringify(attribute) === "{}") {
-            continue;
-        }
         let type = ATTRIBUTE_TABLE[key];
+        if (!geometry) {
+            geometry = GeometryMap[Name];
+        }
         let accessor = decodeOSGAttribute(geometry, key);
         if (accessor) {
             attributes[type] = accessorId;
             globalAccessors.push(accessor);
             accessorId++;
-        }
-        else {
-            // other key 
-            // debugger;
         }
     }
     attributeKeysMap[`${Name}${st}`] = ++idx;
@@ -531,16 +521,15 @@ function decodeOSGVertexAttribute(vertextAttribute, Name) {
 var globalBuffers = [];
 // primitive.attributes
 function decodeOSGAttribute(geometry, key) {
-    if (key == "Color" || key == "Tangent") {
+    if (key == "Tangent" || key == "Color") {
         return;
     }
     ;
-    let accessor = Object.create({});
     if (!geometry) {
         return;
     }
+    let accessor = Object.create({});
     let { _attributes } = geometry;
-    // let _attribute = _attributes[key] || _attributes[`_${key.replace("TexCoord", "")}`];
     let _attribute = _attributes[key];
     if (!_attribute) {
         window['_log'](`can't find key:${key}`);
@@ -568,6 +557,9 @@ function decodeOSGAttribute(geometry, key) {
 function decodeOSGIndice(Name, idx) {
     let accessor = Object.create({});
     let geometry = findIndicesFromNode(Name, _root_, idx);
+    if (!geometry) {
+        geometry = GeometryMap[Name];
+    }
     if (!geometry) {
         return;
     }
@@ -599,7 +591,8 @@ function decodeOSGTexture(textureModel) {
     let { name } = image.attributes;
     let uri = Object.create({});
     Object.assign(uri, {
-        uri: name.replace("_TXTR.tga", "")
+        // uri: name.replace("_TXTR.tga", "")
+        uri: name
     });
     let texture = Object.create({});
     let sampler = Object.create({});
@@ -664,7 +657,7 @@ function main() {
             buffers: [
                 {
                     "byteLength": buffer.byteLength,
-                    "uri": `${modelName}.bin`
+                    "uri": `scene.bin`
                 }
             ],
             bufferViews: globalBufferViews,
@@ -686,8 +679,8 @@ function main() {
             ],
             textures: globalTextures,
         };
-        exportFile(`${modelName}.bin`, buffer);
-        exportFile(`${modelName}.gltf`, JSON.stringify(gltf, null, 4));
+        exportFile(`scene.bin`, buffer);
+        exportFile(`scene.gltf`, JSON.stringify(gltf, null, 4));
     });
 }
 function getMax(arr, interval, max = true) {
@@ -717,7 +710,7 @@ function handleBufferViews() {
             globalElementArrayBuffers.push(buffer);
         }
         else {
-            if (byteStride <= 4) {
+            if (byteStride < 4) {
                 debugger;
             }
             if (typeof globalArrayBuffersMap[byteStride] == "undefined") {

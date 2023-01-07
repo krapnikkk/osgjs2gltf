@@ -218,15 +218,6 @@ function generateGltfMesh(node: OSG.Geometry) {
         let attributes = decodeOSGVertexAttribute(VertexAttributeList, Name);
         if (attributes) {
             primitive.attributes = attributes;
-            if(JSON.stringify(attributes)=="{}"){
-                let geometry = GeometryMap[Name];
-                if(geometry){
-                    // todo
-                    debugger;
-                }else{
-                    debugger;
-                }
-            }
         }
     }
 
@@ -237,7 +228,7 @@ function generateGltfMesh(node: OSG.Geometry) {
     }
 
     if (StateSet) { // material
-        let materialId = decodeOSGStateSet(StateSet['osg.StateSet']);
+        let materialId = decodeOSGStateSet(StateSet['osg.StateSet'],Name);
         if (typeof materialId != "undefined") {
             Object.assign(primitive, { material: materialId });
         }
@@ -247,7 +238,7 @@ function generateGltfMesh(node: OSG.Geometry) {
 }
 
 let globalMtl = {};
-function decodeOSGStateSet(stateSet: OSG.StateSet): boolean {
+function decodeOSGStateSet(stateSet: OSG.StateSet,title:string): boolean {
     let idx;
     let { AttributeList, TextureAttributeList, UniqueID } = stateSet;
     if (typeof globalMtl[UniqueID] != "undefined") {
@@ -260,12 +251,18 @@ function decodeOSGStateSet(stateSet: OSG.StateSet): boolean {
             let material = attribute['osg.Material'];
             let { Name } = material;
             let state = findMaterialFromNode(Name, _root_);
-            let mtl = Object.create({});
-            Object.assign(mtl, {
-                doubleSided: true,
-                name: Name
-            })
+            if(!state){
+                let geometry = GeometryMap[title];
+                if(geometry){
+                    state = geometry.stateset;
+                }
+            }
             if (state) {
+                let mtl = Object.create({});
+                Object.assign(mtl, {
+                    doubleSided: true,
+                    name: Name
+                })
                 let arrtibute = decodeOSGJSStateSet(state);
                 Object.assign(mtl, arrtibute);
                 idx = materialId++;
@@ -531,20 +528,15 @@ function decodeOSGVertexAttribute(vertextAttribute: OSG.IVertexAttribute, Name: 
     let idx = attributeKeysMap[`${Name}${st}`];
     let geometry = findGeometryFromNode(Name, _root_, idx);
     for (let key in vertextAttribute) {
-        let attribute = vertextAttribute[<OSG.ATTRIBUTE_TYPE>key];
-        delete attribute.UniqueID;
-        if (JSON.stringify(attribute) === "{}") {
-            continue;
-        }
         let type = ATTRIBUTE_TABLE[key];
+        if(!geometry){
+            geometry = GeometryMap[Name];
+        }
         let accessor = decodeOSGAttribute(geometry, <OSG.ATTRIBUTE_TYPE>key);
         if (accessor) {
             attributes[type] = accessorId;
             globalAccessors.push(accessor);
             accessorId++;
-        } else {
-            // other key 
-            // debugger;
         }
     }
 
@@ -557,11 +549,10 @@ function decodeOSGVertexAttribute(vertextAttribute: OSG.IVertexAttribute, Name: 
 var globalBuffers = [];
 // primitive.attributes
 function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
-    if (key == "Color" || key == "Tangent") { return };
-    let accessor = Object.create({});
+    if ( key == "Tangent" || key == "Color") { return };
     if (!geometry) { return }
+    let accessor = Object.create({});
     let { _attributes } = geometry;
-    // let _attribute = _attributes[key] || _attributes[`_${key.replace("TexCoord", "")}`];
     let _attribute = _attributes[key];
     if (!_attribute) { window['_log'](`can't find key:${key}`); return; };
     let { _type, _elements, _itemSize, _numItems, _target } = _attribute;
@@ -587,6 +578,9 @@ function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
 function decodeOSGIndice(Name: string, idx: number) {
     let accessor = Object.create({});
     let geometry = findIndicesFromNode(Name, _root_, idx);
+    if (!geometry) {
+        geometry = GeometryMap[Name];
+    }
     if (!geometry) {
         return;
     }
@@ -620,7 +614,8 @@ function decodeOSGTexture(textureModel: OSGJS.ITextureModel) {
     let { name } = image.attributes;
     let uri = Object.create({});
     Object.assign(uri, {
-        uri: name.replace("_TXTR.tga", "")
+        // uri: name.replace("_TXTR.tga", "")
+        uri: name
     })
     let texture = Object.create({});
 
@@ -745,7 +740,7 @@ function handleBufferViews() {
             }
             globalElementArrayBuffers.push(buffer);
         } else {
-            if (byteStride <= 4) {
+            if (byteStride < 4) {
                 debugger;
             }
             if (typeof globalArrayBuffersMap[byteStride] == "undefined") {
