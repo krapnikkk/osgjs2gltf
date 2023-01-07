@@ -112,6 +112,7 @@ declare module OSGJS {
 
   interface channelAttribute{
     color?:Float32Array;
+    type?:string;
     textureModel?:ITextureModel,
     factor:number,
     displayName:string,

@@ -1,6 +1,6 @@
 import { glTF } from "../@types/gltf";
 declare var _root_: OSGJS.Node;
-declare var _model_:any;
+declare var _model_: any;
 declare var Uint8ArrayMap: { [key: number]: Uint8Array };
 declare function clearUint8Array(): void;
 var PRIMITIVE_TABLE = {
@@ -159,6 +159,9 @@ function generateGltfNode(node: OSG.NodeType) {
     if (children) {
         Object.assign(obj, { children });
     }
+    if(node['translation']||node['rotation']||node['scale']||node['weights']||node['skin']){
+        debugger;
+    }
     switch (type) {
         case OSG.ENode.Node:
             break;
@@ -272,14 +275,12 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
     let attribute = _attributeArray[0];
     let { _object } = attribute;
     let { _activeChannels } = _object;
-    if (_activeChannels.length > 5) { debugger };
-    // 0->baseColor 1 -> metalness 2-> glossness/roughness 3->emission  4->specularF0
     let pbrMetallicRoughness = Object.create({});
-    let emissiveFactor, emissiveTexture;
+    let emissiveFactor, emissiveTexture,normalTexture,occlusionTexture,alphaMode;
 
     _activeChannels.forEach((channel) => {
         let { attributes } = channel;
-        let { color, factor, textureModel, displayName } = attributes;
+        let { color, factor, textureModel, displayName, type } = attributes;
         if (displayName == "Base Color") {
             if (color) {
                 pbrMetallicRoughness.baseColorFactor = [...color.map((c) => c * factor), 1.0];
@@ -290,13 +291,19 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
                 pbrMetallicRoughness.baseColorTexture = {
                     index: textureId++
                 };
-                // todo search by textureModel
-                // textureModel['id'] = textureId++;
                 decodeOSGTexture(textureModel);
             }
         } else {
             if (displayName == "Metalness") {
-                pbrMetallicRoughness.metallicFactor = factor;
+                if(factor){
+                    pbrMetallicRoughness.metallicFactor = factor;
+                }
+                if(textureModel){
+                    pbrMetallicRoughness.baseColorTexture = {
+                        index: textureId++
+                    };
+                    decodeOSGTexture(textureModel);
+                }
             } else if (displayName == "Glossiness") {
                 1 - factor !== 1 ? pbrMetallicRoughness.roughnessFactor = 1 - factor : null;
             } else if (displayName == "Emission") {
@@ -315,14 +322,53 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
                         index: textureId++
                     };
                     if (!color) {
-                        emissiveFactor = [factor, factor, factor];
+                        emissiveFactor = [...[0,0,0].map((c) => {
+                            if (factor < 1) {
+                                return factor;
+                            } else {
+                                return 1;
+                            }
+                        })];
                     }
                     decodeOSGTexture(textureModel);
 
                 }
             } else if (displayName == "Specular F0") {
-
-            } else {
+                // todo
+            } else if (displayName == "Opacity") {
+                if(type == "alphaBlend"){
+                    alphaMode = "BLEND"
+                }else{
+                    debugger;
+                }
+            } else if (displayName == "Roughness") {
+                if(factor && factor != 1){
+                    pbrMetallicRoughness.roughnessFactor = factor;
+                    debugger
+                }
+                if (textureModel) {
+                    pbrMetallicRoughness.metallicRoughnessTexture = {
+                        index: textureId++
+                    };
+                    decodeOSGTexture(textureModel);
+                }
+            } else if(displayName == "Normal map"){
+                if(textureModel){
+                    normalTexture = {
+                        index: textureId++
+                    }
+                    decodeOSGTexture(textureModel);
+                }
+            } else if(displayName == "Ambient Occlusion"){
+                if(textureModel){
+                    occlusionTexture = {
+                        index: textureId++
+                    }
+                    decodeOSGTexture(textureModel);
+                }
+                
+            }else {
+                window['_log'](`unsupport display attribute:${displayName}`);
                 debugger;
             }
         }
@@ -335,6 +381,18 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
     if (emissiveTexture) {
         Object.assign(attr, { emissiveTexture });
     }
+    if (normalTexture) {
+        Object.assign(attr, { normalTexture });
+    }
+    if (occlusionTexture) {
+        Object.assign(attr, { occlusionTexture });
+    }
+    if(alphaMode){
+        Object.assign(attr, { alphaMode });
+        
+    }
+    
+    
     return attr;
 }
 
@@ -440,7 +498,7 @@ function decodeOSGPrimitiveSet(primitiveSetList: OSG.IPrimitiveSet[], Name: stri
             let { Mode } = primitive;
             let mode = PRIMITIVE_TABLE[Mode];
             let accessor = decodeOSGIndice(Name, idx);
-            if(!accessor){
+            if (!accessor) {
                 continue;
             }
             globalAccessors.push(accessor);
@@ -500,16 +558,16 @@ function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
     let count = _numItems || byteLength / _itemSize;
     var byteStride = BYTES_PER_ELEMENT * _itemSize;
     globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
-    if (_minMax) {
-        Object.assign(accessor, {
-            bufferView: bufferViewId,
-            componentType: _type,
-            count,
-            max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
-            min: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
-            type,
-        });
-    } else {
+    // if (_minMax) {
+    //     Object.assign(accessor, {
+    //         bufferView: bufferViewId,
+    //         componentType: _type,
+    //         count,
+    //         max: [_minMax.xmax, _minMax.ymax, _minMax.zmax],
+    //         min: [_minMax.xmin, _minMax.ymin, _minMax.zmin],
+    //         type,
+    //     });
+    // } else {
         Object.assign(accessor, {
             bufferView: bufferViewId,
             componentType: _type,
@@ -518,7 +576,7 @@ function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
             min: getMax(_elements, _itemSize, false),
             type,
         });
-    }
+    // }
     bufferViewId++;
     return accessor;
 
@@ -623,7 +681,7 @@ async function main() {
     let gltf: glTF = {
         accessors: globalAccessors,
         asset: {
-            generator: "gltf-creator",
+            generator: "osg2gltf",
             version: "2.0",
         },
         buffers: [
@@ -716,7 +774,7 @@ async function concatBufferViews() {
         "target": TARGET_TABLE['ELEMENT_ARRAY_BUFFER']
     });
 
-    let arrayBuffersArr = [], idx = 1,byteLen = elementArrayBufferView.byteLength;
+    let arrayBuffersArr = [], idx = 1, byteLen = elementArrayBufferView.byteLength;
     for (let key in globalArrayBuffersMap) {
         let arrayBuffers = globalArrayBuffersMap[key];
         let offset = 0, arrayBufferArr = [];
@@ -747,7 +805,7 @@ async function concatBufferViews() {
         });
         byteLen += buffer.byteLength;
     }
-    let ab = await concatArraybuffer([elementArrayBufferView,...arrayBuffersArr]);
+    let ab = await concatArraybuffer([elementArrayBufferView, ...arrayBuffersArr]);
     return ab;
 }
 
