@@ -81,6 +81,9 @@ let nodeMap = {
     "osg.Node": [],
     "osg.MatrixTransform": [],
     "osg.Geometry": [],
+    "osgAnimation.Skeleton": [],
+    "osgAnimation.RigGeometry": [],
+    "osgAnimation.Bone": []
 };
 let globalNodes = [], gltfNodes = [], nodeId = 1;
 let globalAccessors = [], accessorId = 0;
@@ -187,6 +190,12 @@ function generateGltfNode(node) {
             Object.assign(obj, { mesh: meshId++ });
             node['meshId'] = meshId;
             break;
+        case "osg.Skeleton" /* OSG.ENode.Skeleton */:
+            break;
+        case "osg.RigGeometry" /* OSG.ENode.RigGeometry */:
+            break;
+        case "osg.Bone" /* OSG.ENode.Bone */:
+            break;
         default:
             debugger;
             break;
@@ -252,7 +261,6 @@ function decodeOSGStateSet(stateSet, title) {
         idx = globalMtl[UniqueID];
     }
     if (AttributeList) {
-        debugger;
         for (let i = 0; i < AttributeList.length; i++) {
             let attribute = AttributeList[i];
             let material = attribute['osg.Material'];
@@ -562,9 +570,9 @@ function decodeOSGAttribute(geometry, key) {
     }
     ;
     let { _type, _elements, _itemSize, _numItems, _target, _normalize } = _attribute;
-    let { byteLength, BYTES_PER_ELEMENT } = _elements;
+    let { BYTES_PER_ELEMENT, length } = _elements;
     let type = TYPE_TABLE[_itemSize];
-    let count = _numItems || byteLength / _itemSize;
+    let count = _numItems || length / _itemSize;
     var byteStride = BYTES_PER_ELEMENT * _itemSize;
     globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
     Object.assign(accessor, {
@@ -679,6 +687,9 @@ function main() {
         handleBufferViews();
         let { attributes } = _model_;
         let { name, license, user, viewerUrl } = attributes;
+        if (!license) {
+            license = { label: "see viewerUrl", url: viewerUrl };
+        }
         let { label, url } = license;
         let { username, profileUrl } = user;
         let buffer = yield concatBufferViews();
@@ -799,6 +810,12 @@ function concatBufferViews() {
             }
             idx++;
             let buffer = yield concatArraybuffer(arrayBufferArr);
+            let byteOffset = byteLen % 4;
+            if (byteOffset !== 0) {
+                byteLen += byteOffset;
+                let buf = new ArrayBuffer(byteOffset);
+                buffer = yield concatArraybuffer([buffer, buf]);
+            }
             arrayBuffersArr.push(buffer);
             arrayBufferArr.length = 0;
             offset = 0;
@@ -817,3 +834,4 @@ function concatBufferViews() {
     });
 }
 main();
+export {};

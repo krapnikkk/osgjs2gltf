@@ -2,7 +2,7 @@ import { glTF } from "../@types/gltf";
 declare var _root_: OSGJS.Node;
 declare var _model_: any;
 declare var Uint8ArrayMap: { [key: number]: Uint8Array };
-declare var GeometryMap:{[key:string]:OSGJS.Geometry};
+declare var GeometryMap: { [key: string]: OSGJS.Geometry };
 declare function clearUint8Array(): void;
 var PRIMITIVE_TABLE = {
     "POINTS": 0,
@@ -84,6 +84,9 @@ let nodeMap = {
     "osg.Node": [],
     "osg.MatrixTransform": [],
     "osg.Geometry": [],
+    "osgAnimation.Skeleton": [],
+    "osgAnimation.RigGeometry": [],
+    "osgAnimation.Bone": []
 };
 let globalNodes = [], gltfNodes = [], nodeId = 1;
 let globalAccessors = [], accessorId = 0;
@@ -115,22 +118,22 @@ function decodeOSGRoot(root: OSG.Root) {
             1
         ],
         "matrix": [
-          1.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          2.220446049250313e-16,
-          -1.0,
-          0.0,
-          0.0,
-          1.0,
-          2.220446049250313e-16,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          1.0
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            2.220446049250313e-16,
+            -1.0,
+            0.0,
+            0.0,
+            1.0,
+            2.220446049250313e-16,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
         ],
         "name": "Sketchfab_model"
     })
@@ -196,6 +199,12 @@ function generateGltfNode(node: OSG.NodeType) {
             Object.assign(obj, { mesh: meshId++ });
             node['meshId'] = meshId;
             break;
+        case OSG.ENode.Skeleton:
+            break;
+        case OSG.ENode.RigGeometry:
+            break;
+        case OSG.ENode.Bone:
+            break;
         default:
             debugger;
             break;
@@ -230,7 +239,7 @@ function generateGltfMesh(node: OSG.Geometry) {
         primitives
     };
     let primitive = Object.create({});
-    
+
 
     if (VertexAttributeList) { //accessors -> attributes
         let attributes = decodeOSGVertexAttribute(VertexAttributeList, Name);
@@ -241,18 +250,18 @@ function generateGltfMesh(node: OSG.Geometry) {
 
     if (PrimitiveSetList) {//accessors ->primitives[indices]
         let primitiveArr = decodeOSGPrimitiveSet(PrimitiveSetList, Name);
-        primitiveArr.forEach((prt)=>{
+        primitiveArr.forEach((prt) => {
             let obj = Object.create({});
             Object.assign(obj, prt);
-            Object.assign(obj,primitive);
+            Object.assign(obj, primitive);
             primitives.push(obj);
         })
-        
+
     }
 
     if (StateSet) { // material
-        let materialId = decodeOSGStateSet(StateSet['osg.StateSet'],Name);
-        for(let i = 0;i<primitives.length;i++){
+        let materialId = decodeOSGStateSet(StateSet['osg.StateSet'], Name);
+        for (let i = 0; i < primitives.length; i++) {
             let prt = primitives[i];
             if (typeof materialId != "undefined") {
                 Object.assign(prt, { material: materialId });
@@ -264,23 +273,21 @@ function generateGltfMesh(node: OSG.Geometry) {
 }
 
 let globalMtl = {};
-function decodeOSGStateSet(stateSet: OSG.StateSet,title:string): boolean {
+function decodeOSGStateSet(stateSet: OSG.StateSet, title: string): boolean {
     let idx;
     let { AttributeList, TextureAttributeList, UniqueID } = stateSet;
     if (typeof globalMtl[UniqueID] != "undefined") {
         idx = globalMtl[UniqueID];
     }
-
     if (AttributeList) {
-        debugger
         for (let i = 0; i < AttributeList.length; i++) {
             let attribute = AttributeList[i];
             let material = attribute['osg.Material'];
             let { Name } = material;
             let state = findMaterialFromNode(Name, _root_);
-            if(!state){
+            if (!state) {
                 let geometry = GeometryMap[title];
-                if(geometry){
+                if (geometry) {
                     state = geometry.stateset;
                 }
             }
@@ -534,7 +541,7 @@ function decodeOSGPrimitiveSet(primitiveSetList: OSG.IPrimitiveSet[], Name: stri
             let { Mode } = primitive;
             let mode = PRIMITIVE_TABLE[Mode];
             let accessors = decodeOSGIndice(Name, idx);
-            if (!accessors||accessors.length == 0) {
+            if (!accessors || accessors.length == 0) {
                 continue;
             }
             globalAccessors.push(...accessors);
@@ -556,7 +563,7 @@ function decodeOSGVertexAttribute(vertextAttribute: OSG.IVertexAttribute, Name: 
     let geometry = findGeometryFromNode(Name, _root_, idx);
     for (let key in vertextAttribute) {
         let type = ATTRIBUTE_TABLE[key];
-        if(!geometry){
+        if (!geometry) {
             geometry = GeometryMap[Name];
         }
         let accessor = decodeOSGAttribute(geometry, <OSG.ATTRIBUTE_TYPE>key);
@@ -576,16 +583,16 @@ function decodeOSGVertexAttribute(vertextAttribute: OSG.IVertexAttribute, Name: 
 var globalBuffers = [];
 // primitive.attributes
 function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
-    if ( key == "Tangent" || key == "Color") { return };
+    if (key == "Tangent" || key == "Color") { return };
     if (!geometry) { return }
     let accessor = Object.create({});
     let { _attributes } = geometry;
     let _attribute = _attributes[key];
     if (!_attribute) { window['_log'](`can't find key:${key}`); return; };
-    let { _type, _elements, _itemSize, _numItems, _target,_normalize} = _attribute;
-    let { byteLength, BYTES_PER_ELEMENT } = _elements;
+    let { _type, _elements, _itemSize, _numItems, _target, _normalize } = _attribute;
+    let { BYTES_PER_ELEMENT, length } = _elements;
     let type = TYPE_TABLE[_itemSize];
-    let count = _numItems || byteLength / _itemSize;
+    let count = _numItems || length / _itemSize;
     var byteStride = BYTES_PER_ELEMENT * _itemSize;
     globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
     Object.assign(accessor, {
@@ -596,9 +603,9 @@ function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
         min: getMax(_elements, _itemSize, false),
         type,
     });
-    if(_normalize){
-        Object.assign(accessor,{
-            normalized:_normalize
+    if (_normalize) {
+        Object.assign(accessor, {
+            normalized: _normalize
         })
     }
     bufferViewId++;
@@ -617,7 +624,7 @@ function decodeOSGIndice(Name: string, idx: number) {
         return;
     }
     let { _primitives } = geometry;
-    for(let i = 0;i<_primitives.length;i++){
+    for (let i = 0; i < _primitives.length; i++) {
         let accessor = Object.create({});
         let primitives = _primitives[i];
         let { indices } = primitives;
@@ -708,10 +715,13 @@ async function main() {
     decodeOSGNode(globalNodes);
     decodeOSGGeometries(nodeMap['osg.Geometry']);
     handleBufferViews();
-    let {attributes} = _model_;
-    let {name,license,user,viewerUrl} = attributes;
-    let {label,url} = license;
-    let {username,profileUrl} = user;
+    let { attributes } = _model_;
+    let { name, license, user, viewerUrl } = attributes;
+    if (!license) {
+        license = { label: "see viewerUrl", url: viewerUrl }
+    }
+    let { label, url } = license;
+    let { username, profileUrl } = user;
     let buffer = await concatBufferViews();
     let gltf: glTF = {
         accessors: globalAccessors,
@@ -832,9 +842,16 @@ async function concatBufferViews() {
         }
         idx++;
         let buffer = await concatArraybuffer(arrayBufferArr);
+        let byteOffset = byteLen % 4
+        if (byteOffset !== 0) {
+            byteLen += byteOffset;
+            let buf = new ArrayBuffer(byteOffset);
+            buffer = await concatArraybuffer([buffer, buf]);
+        }
         arrayBuffersArr.push(buffer);
         arrayBufferArr.length = 0;
         offset = 0;
+
         globalBufferViews.push({
             "buffer": 0,
             "byteOffset": byteLen,

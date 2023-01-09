@@ -130,7 +130,11 @@ declare module OSG {
     export const enum ENode {
         Node = "osg.Node",
         MatrixTransform = "osg.MatrixTransform",
-        Geometry = "osg.Geometry"
+        Geometry = "osg.Geometry",
+        Skeleton = "osg.Skeleton",
+        RigGeometry = "osg.RigGeometry",
+        Bone = "osg.Bone",
+
     }
     export type NodeNameType = "osg.Node" | "osg.MatrixTransform" | "osg.Geometry";
 
