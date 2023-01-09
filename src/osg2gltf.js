@@ -108,6 +108,24 @@ function decodeOSGRoot(root) {
         "children": [
             1
         ],
+        "matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            2.220446049250313e-16,
+            -1.0,
+            0.0,
+            0.0,
+            1.0,
+            2.220446049250313e-16,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+        ],
         "name": "Sketchfab_model"
     });
     splitChildren(root["osg.Node"].Children);
@@ -657,7 +675,7 @@ function main() {
             buffers: [
                 {
                     "byteLength": buffer.byteLength,
-                    "uri": `scene.bin`
+                    "uri": `${modelName}.bin`
                 }
             ],
             bufferViews: globalBufferViews,
@@ -679,8 +697,8 @@ function main() {
             ],
             textures: globalTextures,
         };
-        exportFile(`scene.bin`, buffer);
-        exportFile(`scene.gltf`, JSON.stringify(gltf, null, 4));
+        exportFile(`${modelName}.bin`, buffer);
+        exportFile(`${modelName}.gltf`, JSON.stringify(gltf, null, 4));
     });
 }
 function getMax(arr, interval, max = true) {
@@ -777,3 +795,4 @@ function concatBufferViews() {
     });
 }
 main();
+export {};

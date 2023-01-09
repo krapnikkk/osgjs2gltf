@@ -114,6 +114,24 @@ function decodeOSGRoot(root: OSG.Root) {
         "children": [
             1
         ],
+        "matrix": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          2.220446049250313e-16,
+          -1.0,
+          0.0,
+          0.0,
+          1.0,
+          2.220446049250313e-16,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
         "name": "Sketchfab_model"
     })
     splitChildren(root["osg.Node"].Children)
