@@ -230,7 +230,7 @@ function generateGltfMesh(node: OSG.Geometry) {
         primitives
     };
     let primitive = Object.create({});
-    primitives.push(primitive);
+    
 
     if (VertexAttributeList) { //accessors -> attributes
         let attributes = decodeOSGVertexAttribute(VertexAttributeList, Name);
@@ -241,14 +241,22 @@ function generateGltfMesh(node: OSG.Geometry) {
 
     if (PrimitiveSetList) {//accessors ->primitives[indices]
         let primitiveArr = decodeOSGPrimitiveSet(PrimitiveSetList, Name);
-        // if (primitiveArr.length > 1) { debugger };
-        Object.assign(primitive, primitiveArr[0])
+        primitiveArr.forEach((prt)=>{
+            let obj = Object.create({});
+            Object.assign(obj, prt);
+            Object.assign(obj,primitive);
+            primitives.push(obj);
+        })
+        
     }
 
     if (StateSet) { // material
         let materialId = decodeOSGStateSet(StateSet['osg.StateSet'],Name);
-        if (typeof materialId != "undefined") {
-            Object.assign(primitive, { material: materialId });
+        for(let i = 0;i<primitives.length;i++){
+            let prt = primitives[i];
+            if (typeof materialId != "undefined") {
+                Object.assign(prt, { material: materialId });
+            }
         }
     }
 
@@ -264,6 +272,7 @@ function decodeOSGStateSet(stateSet: OSG.StateSet,title:string): boolean {
     }
 
     if (AttributeList) {
+        debugger
         for (let i = 0; i < AttributeList.length; i++) {
             let attribute = AttributeList[i];
             let material = attribute['osg.Material'];
@@ -524,11 +533,11 @@ function decodeOSGPrimitiveSet(primitiveSetList: OSG.IPrimitiveSet[], Name: stri
             }
             let { Mode } = primitive;
             let mode = PRIMITIVE_TABLE[Mode];
-            let accessor = decodeOSGIndice(Name, idx);
-            if (!accessor) {
+            let accessors = decodeOSGIndice(Name, idx);
+            if (!accessors||accessors.length == 0) {
                 continue;
             }
-            globalAccessors.push(accessor);
+            globalAccessors.push(...accessors);
 
             Object.assign(gltfPrimitive, { mode, indices: accessorId++ });
             primitives.push(gltfPrimitive);
@@ -599,7 +608,7 @@ function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
 
 // primitive.indices
 function decodeOSGIndice(Name: string, idx: number) {
-    let accessor = Object.create({});
+    let accessors = [];
     let geometry = findIndicesFromNode(Name, _root_, idx);
     if (!geometry) {
         geometry = GeometryMap[Name];
@@ -608,26 +617,26 @@ function decodeOSGIndice(Name: string, idx: number) {
         return;
     }
     let { _primitives } = geometry;
-    // if (_primitives.length > 1) {
-    //     debugger;
-    // }
-    let primitives = _primitives[0];
-    let { indices } = primitives
-    let { _type, _elements, _itemSize, _numItems, _target } = indices; // bufferViews
-    let { byteLength, BYTES_PER_ELEMENT } = _elements;
-    let type = TYPE_TABLE[_itemSize];
-    let count = _numItems || byteLength / _itemSize;
-    var byteStride = BYTES_PER_ELEMENT * _itemSize;
-    globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
-    Object.assign(accessor, {
-        bufferView: 0,
-        componentType: _type,
-        count,
-        type,
-    });
-
-    bufferViewId++;
-    return accessor;
+    for(let i = 0;i<_primitives.length;i++){
+        let accessor = Object.create({});
+        let primitives = _primitives[i];
+        let { indices } = primitives;
+        let { _type, _elements, _itemSize, _numItems, _target } = indices; // bufferViews
+        let { byteLength, BYTES_PER_ELEMENT } = _elements;
+        let type = TYPE_TABLE[_itemSize];
+        let count = _numItems || byteLength / _itemSize;
+        var byteStride = BYTES_PER_ELEMENT * _itemSize;
+        globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
+        Object.assign(accessor, {
+            bufferView: 0,
+            componentType: _type,
+            count,
+            type,
+        });
+        accessors.push(accessor);
+        bufferViewId++;
+    }
+    return accessors;
 }
 
 function decodeOSGTexture(textureModel: OSGJS.ITextureModel) {
