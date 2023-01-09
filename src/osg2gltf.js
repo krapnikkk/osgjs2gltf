@@ -554,7 +554,7 @@ function decodeOSGAttribute(geometry, key) {
         return;
     }
     ;
-    let { _type, _elements, _itemSize, _numItems, _target } = _attribute;
+    let { _type, _elements, _itemSize, _numItems, _target, _normalize } = _attribute;
     let { byteLength, BYTES_PER_ELEMENT } = _elements;
     let type = TYPE_TABLE[_itemSize];
     let count = _numItems || byteLength / _itemSize;
@@ -568,6 +568,11 @@ function decodeOSGAttribute(geometry, key) {
         min: getMax(_elements, _itemSize, false),
         type,
     });
+    if (_normalize) {
+        Object.assign(accessor, {
+            normalized: _normalize
+        });
+    }
     bufferViewId++;
     return accessor;
 }
@@ -664,7 +669,7 @@ function main() {
         decodeOSGNode(globalNodes);
         decodeOSGGeometries(nodeMap['osg.Geometry']);
         handleBufferViews();
-        let attributes = _model_;
+        let { attributes } = _model_;
         let { name, license, user, viewerUrl } = attributes;
         let { label, url } = license;
         let { username, profileUrl } = user;
