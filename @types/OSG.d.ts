@@ -131,9 +131,9 @@ declare module OSG {
         Node = "osg.Node",
         MatrixTransform = "osg.MatrixTransform",
         Geometry = "osg.Geometry",
-        Skeleton = "osg.Skeleton",
-        RigGeometry = "osg.RigGeometry",
-        Bone = "osg.Bone",
+        Skeleton = "osgAnimation.Skeleton",
+        RigGeometry = "osgAnimation.RigGeometry",
+        Bone = "osgAnimation.Bone",
 
     }
     export type NodeNameType = "osg.Node" | "osg.MatrixTransform" | "osg.Geometry";

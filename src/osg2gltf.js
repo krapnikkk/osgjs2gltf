@@ -834,4 +834,3 @@ function concatBufferViews() {
     });
 }
 main();
-export {};
