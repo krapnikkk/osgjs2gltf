@@ -664,18 +664,27 @@ function main() {
         decodeOSGNode(globalNodes);
         decodeOSGGeometries(nodeMap['osg.Geometry']);
         handleBufferViews();
-        let modelName = _model_.attributes.name;
+        let attributes = _model_;
+        let { name, license, user, viewerUrl } = attributes;
+        let { label, url } = license;
+        let { username, profileUrl } = user;
         let buffer = yield concatBufferViews();
         let gltf = {
             accessors: globalAccessors,
             asset: {
-                generator: "osg2gltf",
+                extras: {
+                    "author": `${username} (${profileUrl})`,
+                    "license": `${label} (${url})`,
+                    "source": `${viewerUrl}`,
+                    "title": name
+                },
+                generator: "osg2glTF",
                 version: "2.0",
             },
             buffers: [
                 {
                     "byteLength": buffer.byteLength,
-                    "uri": `${modelName}.bin`
+                    "uri": `${name}.bin`
                 }
             ],
             bufferViews: globalBufferViews,
@@ -697,8 +706,8 @@ function main() {
             ],
             textures: globalTextures,
         };
-        exportFile(`${modelName}.bin`, buffer);
-        exportFile(`${modelName}.gltf`, JSON.stringify(gltf, null, 4));
+        exportFile(`${name}.bin`, buffer);
+        exportFile(`${name}.gltf`, JSON.stringify(gltf, null, 4));
     });
 }
 function getMax(arr, interval, max = true) {
