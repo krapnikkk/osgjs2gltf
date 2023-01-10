@@ -25,33 +25,14 @@ let TYPE_TABLE = {
     6: "MAT3",
     7: "MAT4"
 };
-let TYPED_ARRAY = {
-    "Float32Array": Float32Array,
-    "Float64Array": Float64Array,
-    "Int8Array": Int8Array,
-    "Int16Array": Int16Array,
-    "Int32Array": Int32Array,
-    "Uint8Array": Uint8Array,
-    "Uint16Array": Uint16Array,
-    "Uint32Array": Uint32Array,
-    "Uint8ClampedArray": Uint8ClampedArray
-};
-let TARGET_TABLE = {
-    "ARRAY_BUFFER": 34962,
-    "ELEMENT_ARRAY_BUFFER": 34963
-};
-let INDICES_COMPONENT_TYPE_TABE = {
+let INDICES_COMPONENT_TYPE_TABLE = {
     "DrawElementsUByte": 5121,
     "DrawElementsUShort": 5123,
     "DrawElementsUInt": 5125 // 4
 };
-let COMPONENT_TYPE_TABE = {
-    "BYTE": 5120,
-    "UNSIGNED_BYTE": 5121,
-    "SHORT": 5122,
-    "UNSIGNED_SHORT": 5123,
-    "UNSIGNED_INT": 5125,
-    "FLOAT": 5126
+let TARGET_TABLE = {
+    "ARRAY_BUFFER": 34962,
+    "ELEMENT_ARRAY_BUFFER": 34963
 };
 let ATTRIBUTE_TABLE = {
     'Vertex': 'POSITION',
@@ -190,11 +171,11 @@ function generateGltfNode(node) {
             Object.assign(obj, { mesh: meshId++ });
             node['meshId'] = meshId;
             break;
-        case "osg.Skeleton" /* OSG.ENode.Skeleton */:
+        case "osgAnimation.Skeleton" /* OSG.ENode.Skeleton */:
             break;
-        case "osg.RigGeometry" /* OSG.ENode.RigGeometry */:
+        case "osgAnimation.RigGeometry" /* OSG.ENode.RigGeometry */:
             break;
-        case "osg.Bone" /* OSG.ENode.Bone */:
+        case "osgAnimation.Bone" /* OSG.ENode.Bone */:
             break;
         default:
             debugger;
@@ -402,7 +383,6 @@ function decodeOSGJSStateSet(stateSet) {
             }
             else {
                 window['_log'](`unsupport display attribute:${displayName}`);
-                debugger;
             }
         }
     });
@@ -430,7 +410,7 @@ function findMaterialFromNode(name, node) {
     let stateSet = getMaterialFromOSGJS(name, node);
     for (let i = 0; i < children.length; i++) {
         let child = children[i];
-        if (!stateSet) {
+        if (!stateSet && child._name) {
             stateSet = findMaterialFromNode(name, child);
         }
         else {
@@ -455,7 +435,7 @@ function findGeometryFromNode(name, node, idx) {
     let geometry = getGeometryFromOSGJS(name, node, idx);
     for (let i = 0; i < children.length; i++) {
         let child = children[i];
-        if (geometry) {
+        if (geometry && child._name) {
             break;
         }
         else {
@@ -478,11 +458,10 @@ function getGeometryFromOSGJS(name, node, idx) {
 }
 function findIndicesFromNode(name, node, idx) {
     let { children } = node;
-    let geometry;
+    let geometry = getIndicesFromOSGJS(name, node, idx);
     for (let i = 0; i < children.length; i++) {
         let child = children[i];
-        geometry = getIndicesFromOSGJS(name, child, idx);
-        if (!geometry) {
+        if (!geometry && child._name) {
             geometry = findIndicesFromNode(name, child, idx);
         }
         if (geometry) {
@@ -511,21 +490,21 @@ function decodeOSGPrimitiveSet(primitiveSetList, Name) {
         indicesKeysMap[`${Name}${st}`] = 0;
     }
     let idx = indicesKeysMap[`${Name}${st}`];
-    primitiveSetList.forEach((primitiveSet) => {
-        for (let key in primitiveSet) {
-            let primitive = primitiveSet[key];
-            let gltfPrimitive = {};
-            let { Mode } = primitive;
-            let mode = PRIMITIVE_TABLE[Mode];
-            let accessors = decodeOSGIndice(Name, idx);
-            if (!accessors || accessors.length == 0) {
-                continue;
-            }
-            globalAccessors.push(...accessors);
-            Object.assign(gltfPrimitive, { mode, indices: accessorId++ });
-            primitives.push(gltfPrimitive);
+    for (let i = 0; i < primitiveSetList.length; i++) {
+        let primitiveSet = primitiveSetList[i];
+        let primitive = Object.values(primitiveSet)[0];
+        let gltfPrimitive = {};
+        let { Mode } = primitive;
+        let mode = PRIMITIVE_TABLE[Mode];
+        // let key = Object.keys(primitiveSet)[0]
+        // let indiceComType = INDICES_COMPONENT_TYPE_TABLE[key];
+        let indices = decodeOSGIndice(Name, idx, mode);
+        if (indices == -1) {
+            continue;
         }
-    });
+        Object.assign(gltfPrimitive, { mode, indices });
+        primitives.push(gltfPrimitive);
+    }
     indicesKeysMap[`${Name}${st}`] = ++idx;
     return primitives;
 }
@@ -592,36 +571,47 @@ function decodeOSGAttribute(geometry, key) {
     return accessor;
 }
 // primitive.indices
-function decodeOSGIndice(Name, idx) {
-    let accessors = [];
+function decodeOSGIndice(Name, idx, primitiveType) {
     let geometry = findIndicesFromNode(Name, _root_, idx);
     if (!geometry) {
         geometry = GeometryMap[Name];
     }
     if (!geometry) {
-        return;
+        return -1;
     }
     let { _primitives } = geometry;
-    for (let i = 0; i < _primitives.length; i++) {
-        let accessor = Object.create({});
-        let primitives = _primitives[i];
-        let { indices } = primitives;
-        let { _type, _elements, _itemSize, _numItems, _target } = indices; // bufferViews
-        let { byteLength, BYTES_PER_ELEMENT } = _elements;
-        let type = TYPE_TABLE[_itemSize];
-        let count = _numItems || byteLength / _itemSize;
-        var byteStride = BYTES_PER_ELEMENT * _itemSize;
-        globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
-        Object.assign(accessor, {
-            bufferView: 0,
-            componentType: _type,
-            count,
-            type,
-        });
-        accessors.push(accessor);
-        bufferViewId++;
+    let primitives = _primitives.find((prt) => {
+        return prt.mode == primitiveType;
+    });
+    if (!primitives) {
+        debugger;
+        return -1;
     }
-    return accessors;
+    let accessor = Object.create({});
+    let { indices } = primitives;
+    let { _type, _elements, _itemSize, _numItems, _target } = indices; // bufferViews
+    let { byteLength, BYTES_PER_ELEMENT } = _elements;
+    let type = TYPE_TABLE[_itemSize];
+    let count = _numItems || byteLength / _itemSize;
+    var byteStride = BYTES_PER_ELEMENT * _itemSize;
+    let hasSameAccessor = globalAccessors.findIndex((acr) => {
+        return acr.componentType == _type && acr.count == count && acr.type == type && acr.bufferView == 0;
+    });
+    if (hasSameAccessor != -1) {
+        return hasSameAccessor;
+    }
+    globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
+    Object.assign(accessor, {
+        bufferView: 0,
+        componentType: _type,
+        count,
+        type,
+    });
+    bufferViewId++;
+    globalAccessors.push(accessor);
+    let acrId = accessorId;
+    accessorId++;
+    return acrId;
 }
 function decodeOSGTexture(textureModel) {
     let index = 0;
@@ -786,9 +776,16 @@ function concatBufferViews() {
             elementArrayBuffers.push(buffer);
         }
         let elementArrayBufferView = yield concatArraybuffer(elementArrayBuffers);
+        let byteLength = elementArrayBufferView.byteLength;
+        let byteOffset = byteLength % 4;
+        if (byteOffset !== 0) {
+            byteLength += byteOffset;
+            let buf = new ArrayBuffer(byteOffset);
+            elementArrayBufferView = yield concatArraybuffer([elementArrayBufferView, buf]);
+        }
         globalBufferViews.push({
             "buffer": 0,
-            "byteLength": elementArrayBufferView.byteLength,
+            byteLength,
             "name": "floatBufferViews",
             "target": TARGET_TABLE['ELEMENT_ARRAY_BUFFER']
         });

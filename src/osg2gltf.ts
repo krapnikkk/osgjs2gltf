@@ -24,6 +24,12 @@ let TYPE_TABLE = {
     7: "MAT4"
 };
 
+let INDICES_COMPONENT_TYPE_TABLE = {
+    "DrawElementsUByte": 5121, // 1
+    "DrawElementsUShort": 5123, // 2
+    "DrawElementsUInt": 5125 // 4
+}
+
 let TARGET_TABLE = {
     "ARRAY_BUFFER": 34962,
     "ELEMENT_ARRAY_BUFFER": 34963
@@ -385,7 +391,6 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet) {
 
             } else {
                 window['_log'](`unsupport display attribute:${displayName}`);
-                debugger;
             }
         }
     })
@@ -417,7 +422,7 @@ function findMaterialFromNode(name: string, node: OSGJS.Node): OSGJS.StateSet {
     let stateSet: OSGJS.StateSet = getMaterialFromOSGJS(name, node);
     for (let i = 0; i < children.length; i++) {
         let child = children[i];
-        if (!stateSet) {
+        if (!stateSet && child._name) {
             stateSet = findMaterialFromNode(name, child);
         } else {
             break;
@@ -445,7 +450,7 @@ function findGeometryFromNode(name: string, node: OSGJS.Node, idx: number): OSGJ
     let geometry: OSGJS.Geometry = getGeometryFromOSGJS(name, node, idx);
     for (let i = 0; i < children.length; i++) {
         let child = children[i];
-        if (geometry) {
+        if (geometry && child._name) {
             break;
         } else {
             geometry = findGeometryFromNode(name, child, idx);
@@ -471,11 +476,10 @@ function getGeometryFromOSGJS(name: string, node: OSGJS.Node, idx: number): OSGJ
 
 function findIndicesFromNode(name: string, node: OSGJS.Node, idx: number): OSGJS.Geometry {
     let { children } = node;
-    let geometry: OSGJS.Geometry;
+    let geometry: OSGJS.Geometry = getIndicesFromOSGJS(name, node, idx);
     for (let i = 0; i < children.length; i++) {
         let child = children[i];
-        geometry = getIndicesFromOSGJS(name, child, idx);
-        if (!geometry) {
+        if (!geometry && child._name) {
             geometry = findIndicesFromNode(name, child, idx);
         }
         if (geometry) {
@@ -505,24 +509,28 @@ function decodeOSGPrimitiveSet(primitiveSetList: OSG.IPrimitiveSet[], Name: stri
         indicesKeysMap[`${Name}${st}`] = 0;
     }
     let idx = indicesKeysMap[`${Name}${st}`];
-    primitiveSetList.forEach((primitiveSet) => {
-        for (let key in primitiveSet) {
-            let primitive = primitiveSet[<OSG.DrawElementsType>key];
-            let gltfPrimitive = {
+    for (let i = 0; i < primitiveSetList.length; i++) {
+        let primitiveSet = primitiveSetList[i];
+        let primitive = Object.values(primitiveSet)[0];
+        let gltfPrimitive = {
 
-            }
-            let { Mode } = primitive;
-            let mode = PRIMITIVE_TABLE[Mode];
-            let accessors = decodeOSGIndice(Name, idx);
-            if (!accessors || accessors.length == 0) {
-                continue;
-            }
-            globalAccessors.push(...accessors);
-
-            Object.assign(gltfPrimitive, { mode, indices: accessorId++ });
-            primitives.push(gltfPrimitive);
         }
-    })
+        let { Mode } = primitive;
+        let mode = PRIMITIVE_TABLE[Mode];
+        // let key = Object.keys(primitiveSet)[0]
+        // let indiceComType = INDICES_COMPONENT_TYPE_TABLE[key];
+
+        let indices = decodeOSGIndice(Name, idx, mode);
+
+        if (indices == -1) {
+            continue;
+        }
+        Object.assign(gltfPrimitive, { mode, indices });
+        
+
+        primitives.push(gltfPrimitive);
+
+    }
     indicesKeysMap[`${Name}${st}`] = ++idx;
     return primitives;
 }
@@ -587,36 +595,49 @@ function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
 }
 
 // primitive.indices
-function decodeOSGIndice(Name: string, idx: number) {
-    let accessors = [];
+function decodeOSGIndice(Name: string, idx: number, primitiveType: number) {
     let geometry = findIndicesFromNode(Name, _root_, idx);
     if (!geometry) {
         geometry = GeometryMap[Name];
     }
     if (!geometry) {
-        return;
+        return -1;
     }
     let { _primitives } = geometry;
-    for (let i = 0; i < _primitives.length; i++) {
-        let accessor = Object.create({});
-        let primitives = _primitives[i];
-        let { indices } = primitives;
-        let { _type, _elements, _itemSize, _numItems, _target } = indices; // bufferViews
-        let { byteLength, BYTES_PER_ELEMENT } = _elements;
-        let type = TYPE_TABLE[_itemSize];
-        let count = _numItems || byteLength / _itemSize;
-        var byteStride = BYTES_PER_ELEMENT * _itemSize;
-        globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
-        Object.assign(accessor, {
-            bufferView: 0,
-            componentType: _type,
-            count,
-            type,
-        });
-        accessors.push(accessor);
-        bufferViewId++;
+    let primitives = _primitives.find((prt) => {
+        return prt.mode == primitiveType;
+    });
+    if (!primitives) {
+        debugger;
+        return -1;
     }
-    return accessors;
+
+    let accessor = Object.create({});
+    let { indices } = primitives;
+    let { _type, _elements, _itemSize, _numItems, _target } = indices; // bufferViews
+    let { byteLength, BYTES_PER_ELEMENT } = _elements;
+    let type = TYPE_TABLE[_itemSize];
+    let count = _numItems || byteLength / _itemSize;
+    var byteStride = BYTES_PER_ELEMENT * _itemSize;
+    let hasSameAccessor = globalAccessors.findIndex((acr) => {
+        return acr.componentType == _type && acr.count == count && acr.type == type && acr.bufferView == 0;
+    })
+    if (hasSameAccessor != -1) {
+        return hasSameAccessor;
+    }
+    globalBuffers.push({ data: _elements, byteStride, id: bufferViewId, target: _target });
+
+    Object.assign(accessor, {
+        bufferView: 0,
+        componentType: _type,
+        count,
+        type,
+    });
+    bufferViewId++;
+    globalAccessors.push(accessor);
+    let acrId = accessorId;
+    accessorId++;
+    return acrId;
 }
 
 function decodeOSGTexture(textureModel: OSGJS.ITextureModel) {
@@ -790,9 +811,16 @@ async function concatBufferViews() {
         elementArrayBuffers.push(buffer);
     }
     let elementArrayBufferView = await concatArraybuffer(elementArrayBuffers);
+    let byteLength = elementArrayBufferView.byteLength
+    let byteOffset = byteLength % 4;
+    if (byteOffset !== 0) {
+        byteLength += byteOffset;
+        let buf = new ArrayBuffer(byteOffset);
+        elementArrayBufferView = await concatArraybuffer([elementArrayBufferView, buf]);
+    }
     globalBufferViews.push({
         "buffer": 0,
-        "byteLength": elementArrayBufferView.byteLength,
+        byteLength,
         "name": "floatBufferViews",
         "target": TARGET_TABLE['ELEMENT_ARRAY_BUFFER']
     });
