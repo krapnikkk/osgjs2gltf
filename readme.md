@@ -20,7 +20,8 @@
 | occlusionTexture | :white_check_mark: |
 | emissiveTexture | :white_check_mark: |
 | emissiveFactor | :white_check_mark: |
-| alphaMode |  |
+| emissiveFactor | :white_check_mark: |
+| bump map |  |
 | alphaCutoff |  |
 | doubleSided |  |
 
@@ -34,6 +35,9 @@
 - [ ] wireframe
 - [ ] lights
 - [ ] PBR
+
+### 更新日志
+[更新日志/changelog](./changelog.md)
 
 ### 参考资料
  - [osgjs](https://github.com/cedricpinson/osgjs)
