@@ -24,36 +24,9 @@ let TYPE_TABLE = {
     7: "MAT4"
 };
 
-let TYPED_ARRAY = {
-    "Float32Array": Float32Array,
-    "Float64Array": Float64Array,
-    "Int8Array": Int8Array,
-    "Int16Array": Int16Array,
-    "Int32Array": Int32Array,
-    "Uint8Array": Uint8Array,
-    "Uint16Array": Uint16Array,
-    "Uint32Array": Uint32Array,
-    "Uint8ClampedArray": Uint8ClampedArray
-}
-
 let TARGET_TABLE = {
     "ARRAY_BUFFER": 34962,
     "ELEMENT_ARRAY_BUFFER": 34963
-}
-
-let INDICES_COMPONENT_TYPE_TABE = {
-    "DrawElementsUByte": 5121, // 1
-    "DrawElementsUShort": 5123, // 2
-    "DrawElementsUInt": 5125 // 4
-}
-
-let COMPONENT_TYPE_TABE = {
-    "BYTE": 5120,
-    "UNSIGNED_BYTE": 5121,
-    "SHORT": 5122,
-    "UNSIGNED_SHORT": 5123,
-    "UNSIGNED_INT": 5125,
-    "FLOAT": 5126
 }
 
 let ATTRIBUTE_TABLE = {
