@@ -534,7 +534,6 @@ async function concatBufferViews() {
     return ab;
 }
 
-
 async function main() {
     decodeOSGRoot(_root_);
     handleBufferViews();
