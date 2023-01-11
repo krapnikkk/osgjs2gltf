@@ -278,7 +278,7 @@ function decodeOSGGeometry(geometry: OSGJS.Geometry, material: number) {
             primitives
         })
         // _attributes -> attributes
-        let attributes = decodeOSGVertexAttribute(_attributes, geometry);
+        let attributes = decodeOSGVertexAttribute(_attributes, geometry, material);
 
         // _primitives->indices
         for (let i = 0; i < _primitives.length; i++) {
@@ -301,10 +301,16 @@ function decodeOSGGeometry(geometry: OSGJS.Geometry, material: number) {
     return id;
 }
 
-function decodeOSGVertexAttribute(attribute: OSGJS.attributes, geometry: OSGJS.Geometry) {
+function decodeOSGVertexAttribute(attribute: OSGJS.attributes, geometry: OSGJS.Geometry, material: number) {
     let attributes = {};
     for (let key in attribute) {
         let type = ATTRIBUTE_TABLE[key];
+        if (key == "Tangent") {
+            let mtl = globalMaterials[material];
+            if (JSON.stringify(mtl).indexOf("normalTexture") == -1) {
+                continue
+            }
+        };
         let accessor = decodeOSGAttribute(geometry, <OSG.ATTRIBUTE_TYPE>key);
         if (accessor) {
             attributes[type] = accessorId;
@@ -316,7 +322,6 @@ function decodeOSGVertexAttribute(attribute: OSGJS.attributes, geometry: OSGJS.G
 }
 
 function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
-    if (key == "Tangent" || key == "Color") { return };
     if (!geometry) { return }
     let accessor = Object.create({});
     let { _attributes } = geometry;
@@ -324,6 +329,16 @@ function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
     if (!_attribute) { window['_log'](`can't find key:${key}`); return; };
     let { _type, _elements, _itemSize, _numItems, _target, _normalize } = _attribute;
     let { BYTES_PER_ELEMENT, length } = _elements;
+    if (key == "Normal" || key == "Tangent") {
+        for (let i = 0; i < _elements.length; i += _itemSize) {
+            let ab = [_elements[i], _elements[i + 1], _elements[i + 2]];
+            let arr = normalizeVec3([], ab);
+            _elements[i] = arr[0];
+            _elements[i + 1] = arr[1];
+            _elements[i + 2] = arr[2];
+        }
+    }
+    
     let type = TYPE_TABLE[_itemSize];
     let count = _numItems || length / _itemSize;
     var byteStride = BYTES_PER_ELEMENT * _itemSize;
@@ -479,12 +494,12 @@ async function concatBufferViews() {
     }
     let elementArrayBufferView = await concatArraybuffer(elementArrayBuffers);
     let byteLength = elementArrayBufferView.byteLength
-    let byteOffset = byteLength % 4;
-    if (byteOffset !== 0) {
-        byteLength += byteOffset;
-        let buf = new ArrayBuffer(byteOffset);
-        elementArrayBufferView = await concatArraybuffer([elementArrayBufferView, buf]);
-    }
+    // let byteOffset = byteLength % 4;
+    // if (byteOffset !== 0) {
+    //     byteLength += byteOffset;
+    //     let buf = new ArrayBuffer(byteOffset);
+    //     elementArrayBufferView = await concatArraybuffer([elementArrayBufferView, buf]);
+    // }
     globalBufferViews.push({
         "buffer": 0,
         byteLength,
@@ -510,12 +525,12 @@ async function concatBufferViews() {
         }
         idx++;
         let buffer = await concatArraybuffer(arrayBufferArr);
-        let byteOffset = byteLen % 4
-        if (byteOffset !== 0) {
-            byteLen += byteOffset;
-            let buf = new ArrayBuffer(byteOffset);
-            buffer = await concatArraybuffer([buffer, buf]);
-        }
+        // let byteOffset = byteLen % 4
+        // if (byteOffset !== 0) {
+        //     byteLen += byteOffset;
+        //     let buf = new ArrayBuffer(byteOffset);
+        //     buffer = await concatArraybuffer([buffer, buf]);
+        // }
         arrayBuffersArr.push(buffer);
         arrayBufferArr.length = 0;
         offset = 0;
@@ -532,6 +547,22 @@ async function concatBufferViews() {
     }
     let ab = await concatArraybuffer([elementArrayBufferView, ...arrayBuffersArr]);
     return ab;
+}
+
+function normalizeVec3(out, a) {
+    var x = a[0];
+    var y = a[1];
+    var z = a[2];
+    var len = x * x + y * y + z * z;
+
+    if (len > 0) {
+        len = 1 / Math.sqrt(len);
+    }
+
+    out[0] = a[0] * len;
+    out[1] = a[1] * len;
+    out[2] = a[2] * len;
+    return out;
 }
 
 async function main() {
