@@ -138,7 +138,12 @@ function decodeOSGJSStateSet(stateSet) {
     if (_attributeArray.length <= 3) {
         return;
     }
-    let arrtibute = decodeOSGAttributePair(_attributeArray[0]); // todo
+    // todo
+    let attributeArray = _attributeArray[0];
+    if (!attributeArray) {
+        return;
+    }
+    let arrtibute = decodeOSGAttributePair(attributeArray);
     Object.assign(obj, arrtibute);
     materialId++;
     globalMaterials.push(obj);
@@ -179,7 +184,7 @@ function decodeOSGAttributePair(attribute) {
             }
         }
         else if (displayName == "Glossiness") {
-            1 - factor !== 1 ? pbrMetallicRoughness.roughnessFactor = 1 - factor : null;
+            factor >= 0 && 1 - factor !== 1 ? pbrMetallicRoughness.roughnessFactor = 1 - factor : null;
         }
         else if (displayName == "Emission") {
             if (color) {
@@ -499,12 +504,12 @@ function concatBufferViews() {
         }
         let elementArrayBufferView = yield concatArraybuffer(elementArrayBuffers);
         let byteLength = elementArrayBufferView.byteLength;
-        // let byteOffset = byteLength % 4;
-        // if (byteOffset !== 0) {
-        //     byteLength += byteOffset;
-        //     let buf = new ArrayBuffer(byteOffset);
-        //     elementArrayBufferView = await concatArraybuffer([elementArrayBufferView, buf]);
-        // }
+        let byteOffset = byteLength % 4;
+        if (byteOffset !== 0) {
+            byteLength += byteOffset;
+            let buf = new ArrayBuffer(byteOffset);
+            elementArrayBufferView = yield concatArraybuffer([elementArrayBufferView, buf]);
+        }
         globalBufferViews.push({
             "buffer": 0,
             byteLength,
@@ -529,12 +534,12 @@ function concatBufferViews() {
             }
             idx++;
             let buffer = yield concatArraybuffer(arrayBufferArr);
-            // let byteOffset = byteLen % 4
-            // if (byteOffset !== 0) {
-            //     byteLen += byteOffset;
-            //     let buf = new ArrayBuffer(byteOffset);
-            //     buffer = await concatArraybuffer([buffer, buf]);
-            // }
+            let byteOffset = byteLen % 4;
+            if (byteOffset !== 0) {
+                byteLen += byteOffset;
+                let buf = new ArrayBuffer(byteOffset);
+                buffer = yield concatArraybuffer([buffer, buf]);
+            }
             arrayBuffersArr.push(buffer);
             arrayBufferArr.length = 0;
             offset = 0;
@@ -619,3 +624,4 @@ function main() {
     });
 }
 main();
+export {};
