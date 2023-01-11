@@ -1,11 +1,21 @@
 declare module OSGJS {
+  export const enum ENode {
+    Node = "Node",
+    MatrixTransform = "MatrixTransform",
+    Geometry = "Geometry",
+    Skeleton = "Skeleton",
+    RigGeometry = "RigGeometry",
+    Bone = "Bone",
+
+  }
+
   class OSGObject {
     typeID: number;
     _instanceID: number;
     _userdata: { [key: string]: string };
     _name?: string;
     stateset?: StateSet;
-    _useVAO?:boolean;
+    _useVAO?: boolean;
     center?(result: glMatrix.vec3): number;
     className(): string;
     copy<T extends Object>(other: T): void;
@@ -84,7 +94,7 @@ declare module OSGJS {
     _parents: Node[];
     _drawID: number;
     // uniforms: { [key: string]: AttributePair };
-    _attributeArray:AttributePair[]
+    _attributeArray: AttributePair[]
   }
 
   class Uniform {
@@ -102,34 +112,34 @@ declare module OSGJS {
     _value: string;
   }
 
-  interface Attribute{
-    _activeChannels:activeChannel[];
+  interface Attribute {
+    _activeChannels: activeChannel[];
   }
 
-  interface activeChannel{
-    attributes:channelAttribute
+  interface activeChannel {
+    attributes: channelAttribute
   }
 
-  interface channelAttribute{
-    color?:Float32Array;
-    type?:string;
-    textureModel?:ITextureModel,
-    factor:number,
-    displayName:string,
-    name:string;//"AlbedoPBR" | "MetalnessPBR" | "GlossinessPBR" | "EmitColor" | "SpecularF0"
+  interface channelAttribute {
+    color?: Float32Array;
+    type?: string;
+    textureModel?: ITextureModel,
+    factor: number,
+    displayName: string,
+    name: string;//"AlbedoPBR" | "MetalnessPBR" | "GlossinessPBR" | "EmitColor" | "SpecularF0"
   }
 
-  interface ITextureModel{
-    attributes:{
-      image:{
-        attributes:{
-          name:string
+  interface ITextureModel {
+    attributes: {
+      image: {
+        attributes: {
+          name: string
         }
       },
-      magFilter:number,
-      minFilter:number,
-      wrapS:number,
-      wrapT:number,
+      magFilter: number,
+      minFilter: number,
+      wrapS: number,
+      wrapT: number,
     }
   }
 
@@ -151,7 +161,7 @@ declare module OSGJS {
 
   class DrawElements {
     mode: primitiveSet;
-    itemSize:number;
+    itemSize: number;
     count: number;
     offset: number;
     indices: BufferArray;
@@ -184,7 +194,7 @@ declare module OSGJS {
   }
 
   class BufferArray extends GLObject {
-    _minMax:IMinMax;
+    _minMax: IMinMax;
     _instanceID: number;
     _buffer: WebGLBuffer;
     _usage: BufferArrayType;
@@ -192,23 +202,23 @@ declare module OSGJS {
     _target: BufferArrayType;
     _normalize: boolean;
     _dirty: boolean;
-    _elements:Float32Array;
+    _elements: Float32Array;
     _itemSize: number;
-    _numItems:number;//this._elements.length / this._itemSize;
+    _numItems: number;//this._elements.length / this._itemSize;
     _sDeletedGLBufferArrayCache: Map<WebGLRenderingContext, WebGLBuffer[]>;
   }
 
-  interface IMinMax{
-    xmin:number,
-    ymin:number,
-    zmin:number,
-    xmax:number,
-    ymax:number,
-    zmax:number,
+  interface IMinMax {
+    xmin: number,
+    ymin: number,
+    zmin: number,
+    xmax: number,
+    ymax: number,
+    zmax: number,
   }
 
   interface attributes {
-    [key:string]: BufferArray;
+    [key: string]: BufferArray;
   }
 
   class NodeVisitor {
