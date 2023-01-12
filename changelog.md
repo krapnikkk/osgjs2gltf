@@ -5,3 +5,5 @@
 - 节点扩展normalized属性(add normalized attribute)
 - 支持primitive数组格式(support primitive arrs)
 - 完善osgAnimation类型文件(complete node types with osgAnimation)
+- 重构废弃osgjs依赖(Refactoring obsolete osgjs dependencies)
+- 修复数据向量非标准(glTF Validator(ACCESSOR_VECTOR3_NON_UNIT))
