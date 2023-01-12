@@ -5,9 +5,32 @@ declare module OSGJS {
     Geometry = "Geometry",
     Skeleton = "Skeleton",
     RigGeometry = "RigGeometry",
-    Bone = "Bone",
-
+    Bone = "Bone"
   }
+
+  type ATTRIBUTE_TYPE =
+        'Vertex' |
+        'Normal' |
+        'Tangent' |
+        'TexCoord0' |
+        'TexCoord1' |
+        'TexCoord2' |
+        'TexCoord3' |
+        'TexCoord4' |
+        'TexCoord5' |
+        'TexCoord6' |
+        'TexCoord7' |
+        'TexCoord8' |
+        'TexCoord9' |
+        'TexCoord10' |
+        'TexCoord11' |
+        'TexCoord12' |
+        'TexCoord13' |
+        'TexCoord14' |
+        'TexCoord15' |
+        'Color' |
+        'Bones' |
+        'Weights';
 
   class OSGObject {
     typeID: number;
@@ -77,6 +100,28 @@ declare module OSGJS {
     getReferenceFrame(): number;
     setReferenceFrame(val: number): void;
     computeBoundingSphere(): BoundingSphere;
+  }
+
+  class Bone extends MatrixTransform{
+    _invBindInSkeletonSpace:glMatrix.mat4;
+    _updateCallbacks:updateCallBack[];
+  }
+
+  interface updateCallBack{
+    _matrix:glMatrix.mat4;
+    _name:string;
+    _stackedTransforms:stackedTransform[]
+  }
+
+  interface stackedTransform{
+    _name:string;
+    _target:TransformTarget
+  }
+
+  interface TransformTarget{
+    defaultValue:glMatrix.vec3,
+    value:glMatrix.vec3,
+    type:number
   }
 
   class Geometry extends Node {

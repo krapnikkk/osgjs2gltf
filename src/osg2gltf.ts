@@ -51,6 +51,11 @@ let globalSamplers = [];
 let globalElementArrayBuffers = [];
 let globalArrayBuffersMap = {};
 let globalBuffers = [];
+let globalSkins = [];
+let globalJoints = [];
+let animationChannels = [];
+let animationSamplers = [];
+let inverseBindMatrices = [];
 
 function decodeOSGRoot(root: OSGJS.Node) {
     globalNodes.push({
@@ -65,11 +70,19 @@ function decodeOSGRoot(root: OSGJS.Node) {
 }
 
 function decodeOSGNode(node: OSGJS.Node, material?: number): number {
-    let { _name } = node;
-    let id = nodeId;
-    if (_name) {
+    let { _name, nodeMask } = node;
+    let nodeType = node.className();
+    let id = -1;
+    if (nodeMask == 0 && nodeType == "Node" && typeof _name == "undefined") { // todo 0:node 1:wireframe 55:scene
+
+    } else {
+        id = nodeId;
+        if (typeof _name == "undefined") {
+            _name = `Object_${id}`
+        }
         // decodeOSGNode
         let { children } = node;
+
         let obj = Object.create({});
         nodeId++;
         Object.assign(obj, {
@@ -83,24 +96,11 @@ function decodeOSGNode(node: OSGJS.Node, material?: number): number {
         if (stateset) {
             mtlId = decodeOSGJSStateSet(stateset);
         }
-        if (children.length > 0) {
-            for (let i = 0; i < children.length; i++) {
-                let child = children[i];
-                if (!child._name) {
-                    break;
-                }
-                childrenArr.push(decodeOSGNode(child, mtlId));
-            }
-            Object.assign(obj, {
-                children: childrenArr
-            })
-        }
 
-        let nodeType = node.className();
         if (nodeType == OSGJS.ENode.Geometry) {
             // mesh
-            if (typeof material == "undefined") {
-                debugger;
+            if (typeof material == "undefined" && mtlId) {
+                material = mtlId;
             }
             let mesh = decodeOSGGeometry(node as OSGJS.Geometry, material);
             if (mesh != -1) {
@@ -118,11 +118,52 @@ function decodeOSGNode(node: OSGJS.Node, material?: number): number {
             }
         } else if (nodeType == OSGJS.ENode.Node) {
 
+        } else if (nodeType == OSGJS.ENode.RigGeometry) {
+            debugger;
+            // mesh
+            if (typeof material == "undefined" && mtlId) {
+                material = mtlId;
+            }
+            let mesh = decodeOSGGeometry(node as OSGJS.Geometry, material);
+            if (mesh != -1) {
+                Object.assign(obj, {
+                    mesh
+                })
+            }
+        } else if (nodeType == OSGJS.ENode.Skeleton) {
+            globalJoints.push(id);
+            debugger;
+        } else if (nodeType == OSGJS.ENode.Bone) {
+            let bone = decodeOSGJSBone(node as OSGJS.Bone);
+            Object.assign(obj, bone);
         } else {
             debugger;
         }
-        return id;
+
+        if (children.length > 0) {
+            for (let i = 0; i < children.length; i++) {
+                let child = children[i];
+                if (child._name == "BoneBox" && child.className() == "Geometry") {
+                    // debugger;
+                    continue;
+                }
+                let childId = decodeOSGNode(child, mtlId);
+                if (childId == -1) {
+                    debugger;
+                    continue;
+                } else {
+                    childrenArr.push(childId);
+                }
+            }
+            if (childrenArr.length == 0) {
+                debugger;
+            }
+            Object.assign(obj, {
+                children: childrenArr
+            })
+        }
     }
+    return id;
 }
 
 function decodeOSGJSStateSet(stateSet: OSGJS.StateSet): number {
@@ -137,8 +178,8 @@ function decodeOSGJSStateSet(stateSet: OSGJS.StateSet): number {
         return;
     }
     // todo
-    let attributeArray = _attributeArray[0]
-    if(!attributeArray){return}
+    let attributeArray = _attributeArray[0]; // 0->PBR 17->BlinPhong
+    if (!attributeArray) { return }
     let arrtibute = decodeOSGAttributePair(attributeArray);
     Object.assign(obj, arrtibute);
     materialId++;
@@ -210,7 +251,7 @@ function decodeOSGAttributePair(attribute: OSGJS.AttributePair) {
         } else if (displayName == "Specular F0") {
             // todo export
         } else if (displayName == "Opacity") {
-            debugger;
+            // debugger;
             if (type == "alphaBlend") {
                 alphaMode = "BLEND"
             } else {
@@ -219,7 +260,7 @@ function decodeOSGAttributePair(attribute: OSGJS.AttributePair) {
         } else if (displayName == "Roughness") {
             if (factor && factor != 1) {
                 pbrMetallicRoughness.roughnessFactor = factor;
-                debugger
+                // debugger
             }
             if (textureModel) {
                 let index = decodeOSGTexture(textureModel);
@@ -271,6 +312,7 @@ function decodeOSGAttributePair(attribute: OSGJS.AttributePair) {
 function decodeOSGGeometry(geometry: OSGJS.Geometry, material: number) {
     let id = -1;
     let { _primitives, _attributes, _name } = geometry;
+    if (typeof material == "undefined") { debugger }
     // indices
     if (_primitives && _attributes) {
         let obj = Object.create({});
@@ -314,7 +356,7 @@ function decodeOSGVertexAttribute(attribute: OSGJS.attributes, geometry: OSGJS.G
                 continue
             }
         };
-        let accessor = decodeOSGAttribute(geometry, <OSG.ATTRIBUTE_TYPE>key);
+        let accessor = decodeOSGAttribute(geometry, <OSGJS.ATTRIBUTE_TYPE>key);
         if (accessor) {
             attributes[type] = accessorId;
             globalAccessors.push(accessor);
@@ -324,7 +366,7 @@ function decodeOSGVertexAttribute(attribute: OSGJS.attributes, geometry: OSGJS.G
     return attributes;
 }
 
-function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
+function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSGJS.ATTRIBUTE_TYPE) {
     if (!geometry) { return }
     let accessor = Object.create({});
     let { _attributes } = geometry;
@@ -341,7 +383,7 @@ function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSG.ATTRIBUTE_TYPE) {
             _elements[i + 2] = arr[2];
         }
     }
-    
+
     let type = TYPE_TABLE[_itemSize];
     let count = _numItems || length / _itemSize;
     var byteStride = BYTES_PER_ELEMENT * _itemSize;
@@ -424,6 +466,53 @@ function decodeOSGTexture(textureModel: OSGJS.ITextureModel) {
         index = globalTextures.findIndex(tex => tex.sampler == samplerId && tex.source == uriId);
     }
     return index;
+}
+
+function decodeOSGJSBone(node: OSGJS.Bone) {
+    let attribute = Object.create({});
+    let { _updateCallbacks, _invBindInSkeletonSpace } = node;
+    inverseBindMatrices.push(_invBindInSkeletonSpace);
+
+    if (_updateCallbacks.length == 0 || _updateCallbacks.length > 1) {
+        debugger;
+    }
+    for (let i = 0; i < _updateCallbacks.length; i++) {
+        let update = _updateCallbacks[i];
+        let { _stackedTransforms } = update;
+        if (_stackedTransforms.length == 0 || _stackedTransforms.length > 3) {
+            debugger;
+        }
+        _stackedTransforms.forEach((stackedTransform) => {
+            let { _target, _name } = stackedTransform;
+            if (_name == "translate") {
+                _name = "translation";
+            } else if (_name == "rotate") {
+                _name = "rotation"
+            } else if (_name == "scale") {
+
+            } else {
+                debugger
+            }
+            if (!_target) {
+                debugger;
+            }
+            let { defaultValue, type } = _target;
+            if (type == 0) { // vec3
+                let data = [...defaultValue];
+                if (JSON.stringify(data) != ' [1, 1, 1]') {
+                    attribute[`${_name}`] = data
+                }
+            } else if (type == 1) { // vec4
+                let data = [...defaultValue];
+                if (JSON.stringify(data) != ' [0, 0, 0,1]') {
+                    attribute[`${_name}`] = data
+                }
+            } else {
+                debugger;
+            }
+        })
+    }
+    return attribute;
 }
 
 function hasSameObjact(arr: Array<any>, obj: any): boolean {
@@ -552,7 +641,7 @@ async function concatBufferViews() {
     return ab;
 }
 
-function normalizeVec3(out:number[], a:number[]) {
+function normalizeVec3(out: number[], a: number[]) {
     var x = a[0];
     var y = a[1];
     var z = a[2];
@@ -615,6 +704,13 @@ async function main() {
             }
         ],
         textures: globalTextures,
+        skins: [
+            {
+                inverseBindMatrices: 49,
+                joints: globalJoints,
+                skeleton: 8
+            }
+        ]
     };
     exportFile(`${name}.bin`, buffer);
     exportFile(`${name}.gltf`, JSON.stringify(gltf, null, 4));
