@@ -75,7 +75,7 @@ function decodeOSGNode(node, material) {
     let { _name, nodeMask } = node;
     let nodeType = node.className();
     let id = -1;
-    if (nodeMask == 0 && nodeType == "Node" && typeof _name == "undefined") { // todo 0:node 1:wireframe 55:scene
+    if (nodeMask == 0 && nodeType == "Node" && typeof _name == "undefined") {
     }
     else {
         id = nodeId;
@@ -153,7 +153,7 @@ function decodeOSGNode(node, material) {
                 }
                 let childId = decodeOSGNode(child, mtlId);
                 if (childId == -1) {
-                    debugger;
+                    // debugger;
                     continue;
                 }
                 else {
@@ -395,6 +395,14 @@ function decodeOSGAttribute(geometry, key) {
     ;
     let { _type, _elements, _itemSize, _numItems, _target, _normalize } = _attribute;
     let { BYTES_PER_ELEMENT, length } = _elements;
+    if (key == "Color") {
+        if (_elements[0] > 1) {
+            return;
+        }
+        else {
+            debugger; // todo
+        }
+    }
     if (key == "Normal" || key == "Tangent") {
         for (let i = 0; i < _elements.length; i += _itemSize) {
             let ab = [_elements[i], _elements[i + 1], _elements[i + 2]];
@@ -665,65 +673,4 @@ function normalizeVec3(out, a) {
     out[2] = a[2] * len;
     return out;
 }
-function main() {
-    return __awaiter(this, void 0, void 0, function* () {
-        decodeOSGRoot(_root_);
-        handleBufferViews();
-        let { attributes } = _model_;
-        let { name, license, user, viewerUrl } = attributes;
-        if (!license) {
-            license = { label: "see viewerUrl", url: viewerUrl };
-        }
-        let { label, url } = license;
-        let { username, profileUrl } = user;
-        let buffer = yield concatBufferViews();
-        let gltf = {
-            accessors: globalAccessors,
-            asset: {
-                extras: {
-                    "author": `${username} (${profileUrl})`,
-                    "license": `${label} (${url})`,
-                    "source": `${viewerUrl}`,
-                    "title": name
-                },
-                generator: "osg2glTF",
-                version: "2.0",
-            },
-            buffers: [
-                {
-                    "byteLength": buffer.byteLength,
-                    "uri": `${name}.bin`
-                }
-            ],
-            bufferViews: globalBufferViews,
-            // extensionsUsed: [],
-            // extensionsRequired: [],
-            images: globalImages,
-            materials: globalMaterials,
-            meshes: globalMeshes,
-            nodes: globalNodes,
-            samplers: globalSamplers,
-            scene: 0,
-            scenes: [
-                {
-                    "name": "Sketchfab_Scene",
-                    "nodes": [
-                        0
-                    ]
-                }
-            ],
-            textures: globalTextures,
-            skins: [
-                {
-                    inverseBindMatrices: 49,
-                    joints: globalJoints,
-                    skeleton: 8
-                }
-            ]
-        };
-        exportFile(`${name}.bin`, buffer);
-        exportFile(`${name}.gltf`, JSON.stringify(gltf, null, 4));
-    });
-}
-main();
-export {};
+window['main']();

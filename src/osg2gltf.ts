@@ -1,6 +1,3 @@
-import { glTF } from "../@types/gltf";
-declare var _root_: OSGJS.Node;
-declare var _model_: any;
 let TYPE_TABLE = {
     1: "SCALAR",
     2: "VEC2",
@@ -73,7 +70,7 @@ function decodeOSGNode(node: OSGJS.Node, material?: number): number {
     let { _name, nodeMask } = node;
     let nodeType = node.className();
     let id = -1;
-    if (nodeMask == 0 && nodeType == "Node" && typeof _name == "undefined") { // todo 0:node 1:wireframe 55:scene
+    if (nodeMask == 0 && nodeType == "Node" && typeof _name == "undefined") { 
 
     } else {
         id = nodeId;
@@ -149,7 +146,7 @@ function decodeOSGNode(node: OSGJS.Node, material?: number): number {
                 }
                 let childId = decodeOSGNode(child, mtlId);
                 if (childId == -1) {
-                    debugger;
+                    // debugger;
                     continue;
                 } else {
                     childrenArr.push(childId);
@@ -374,6 +371,13 @@ function decodeOSGAttribute(geometry: OSGJS.Geometry, key: OSGJS.ATTRIBUTE_TYPE)
     if (!_attribute) { window['_log'](`can't find key:${key}`); return; };
     let { _type, _elements, _itemSize, _numItems, _target, _normalize } = _attribute;
     let { BYTES_PER_ELEMENT, length } = _elements;
+    if (key == "Color") {
+        if (_elements[0] > 1) {
+            return;
+        } else {
+            debugger; // todo
+        }
+    }
     if (key == "Normal" || key == "Tangent") {
         for (let i = 0; i < _elements.length; i += _itemSize) {
             let ab = [_elements[i], _elements[i + 1], _elements[i + 2]];
@@ -657,65 +661,6 @@ function normalizeVec3(out: number[], a: number[]) {
     return out;
 }
 
-async function main() {
-    decodeOSGRoot(_root_);
-    handleBufferViews();
-    let { attributes } = _model_;
-    let { name, license, user, viewerUrl } = attributes;
-    if (!license) {
-        license = { label: "see viewerUrl", url: viewerUrl }
-    }
-    let { label, url } = license;
-    let { username, profileUrl } = user;
-    let buffer = await concatBufferViews();
-    let gltf: glTF = {
-        accessors: globalAccessors,
-        asset: {
-            extras: {
-                "author": `${username} (${profileUrl})`,
-                "license": `${label} (${url})`,
-                "source": `${viewerUrl}`,
-                "title": name
-            },
-            generator: "osg2glTF",
-            version: "2.0",
-        },
-        buffers: [
-            {
-                "byteLength": buffer.byteLength,
-                "uri": `${name}.bin`
-            }
-        ],
-        bufferViews: globalBufferViews,
-        // extensionsUsed: [],
-        // extensionsRequired: [],
-        images: globalImages,
-        materials: globalMaterials,
-        meshes: globalMeshes,
-        nodes: globalNodes,
-        samplers: globalSamplers,
-        scene: 0,
-        scenes: [
-            {
-                "name": "Sketchfab_Scene",
-                "nodes": [
-                    0
-                ]
-            }
-        ],
-        textures: globalTextures,
-        skins: [
-            {
-                inverseBindMatrices: 49,
-                joints: globalJoints,
-                skeleton: 8
-            }
-        ]
-    };
-    exportFile(`${name}.bin`, buffer);
-    exportFile(`${name}.gltf`, JSON.stringify(gltf, null, 4));
-}
-
-main();
+window['main']();
 
 
